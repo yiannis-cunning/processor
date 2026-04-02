@@ -37,7 +37,7 @@ module pipeline_top(
     wire [31:0] fetch_decode_pc_p4_int;
 
     // Decode -> Execute interface
-    wire [9:0]  decode_execute_control_bits_int;
+    wire [10:0]  decode_execute_control_bits_int;
     wire [31:0] decode_execute_rs1_val_int;
     wire [31:0] decode_execute_rs2_val_int;
     wire [31:0] decode_execute_immd_val_int;
