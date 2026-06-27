@@ -1,24 +1,6 @@
 `timescale 1ns/1ps
 
 
-/*
-Map:
-
-0x0000 - 0x00ff // reserved
-
-0x0100 - 0x01ff // Bootload
-
-0x0200 - 0x03ff // instruction mem
-
-0x0400 - 0x04ff // reserved
-
-0x0500 - 0x06ff // 4 Blocks data mem
-
-0x0700 - +      // Rest reserved
-
-*/
-
-
 `define LOOP_ADDR 32'h128
 `define INSTR_BASE_ADDR 32'h0200
 `define INSTR_SIZE 32'h0200
@@ -48,12 +30,14 @@ module tb_top;
     logic        data_rd_en_o;
     logic [31:0] data_wr_addr_o;
     logic [31:0] data_wr_data_o;
+    logic [3:0] data_mem_strb_en_o;
     logic        data_wr_en_o;
 
     // -----------------------------
     // Memory Models
     // -----------------------------
     logic [31:0] main_mem  [0:1023];
+    logic [31:0] iccm_mem  [0:1023];
 
     // -----------------------------
     // DUT Instance
@@ -73,7 +57,26 @@ module tb_top;
 
         .data_wr_addr_o(data_wr_addr_o),
         .data_wr_data_o(data_wr_data_o),
+        .data_mem_strb_en_o(data_mem_strb_en_o),
         .data_wr_en_o(data_wr_en_o)
+    );
+
+
+    memory_top I_mem(
+        .clk_i(clk_i),
+        .resetn_i(resetn_i),
+
+        .iccm_raddr_i(instr_raddr_o),
+        .iccm_data_o(instr_data_i),
+
+        .data_rd_addr_i(data_rd_addr_o),
+        .data_rd_data_o(data_rd_data_i),
+        .data_rd_en_i(data_rd_en_o),
+        .data_wr_addr_i(data_wr_addr_o),
+        .data_wr_data_i(data_wr_data_o),
+        .data_mem_strb_en_i(data_mem_strb_en_o),
+        .data_wr_en_i(data_wr_en_o)
+
     );
 
     initial forever #5ns clk_i = ~clk_i;  // 100 MHz
@@ -92,6 +95,7 @@ module tb_top;
         //run_req_i = 0;
     end
 
+    /*
     // Instruction read
     assign instr_data_i = main_mem[instr_raddr_o[11:2]]; 
 
@@ -109,6 +113,11 @@ module tb_top;
     wire [13:0] branch_delta = {10'b1111111111, 4'b0100}; // -12 = (12 = 1100), -12 = ...110100
 
     wire [31:0] program_entry = 32'h200;
+
+
+    initial begin
+        $readmemh("iccm.hex", iccm_mem, 0,  )
+    end
 
     // Init mem
     initial begin
@@ -142,14 +151,25 @@ module tb_top;
         // Start program at main_mem[128]
 
         // Last instrc is main_mem[255]
-    end
+    end*/
 
 
     initial begin
         //wait(done_state);
-        #500ns;
-        $display("Program finished.");
-        //$finish;
+        fork
+            begin
+                wait(instr_raddr_o == 32'h120);
+                $display("PC Reached end loop.");
+            end
+            begin
+                #10us;
+                $display("Program timed out after 10us");
+            end
+        join_any
+
+        $finish;
     end
+
+    mem_assertions I_mem_assert();
 
 endmodule

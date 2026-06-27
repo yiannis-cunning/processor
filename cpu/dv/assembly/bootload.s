@@ -2,4 +2,4 @@
 
 
 main:
-	addi	sp, sp, -32
+	addi	sp, sp, 

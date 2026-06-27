@@ -1,0 +1,46 @@
+
+
+// Size = 1024 words / 4096 Bytes. 
+// All addresses initialzed to NOPs
+// 0x100, is PC start address
+
+// 0x40 is word address..
+@40
+
+/* To set up stack pointer, return address */
+/*
+def print_load_addr(int32_addr, reg):
+    # LUI
+    addr_msb = int32_addr >> 12
+    lui_cmd = (addr_msb << 12 ) + (reg << 7) + (0b0110111)
+    addr_lsb = int32_addr & 0xFFF
+    add_cmd = (addr_lsb << 20) + (reg << 15) + (reg << 7) + (0b0010011)
+    print(hex(lui_cmd))
+    print(hex(add_cmd))
+
+*/
+
+
+// Stack = 0x4000, growing up
+// LUI      a2, $msb(0x4000)
+00004137
+// ADDI     a2, a2, $lsb(0x4000)
+// hex( (0x0 << 20) + (0x2 << 15) + (0x2 << 7) + (0b0010011) )
+00010113
+
+// Call 0x1000
+// ra = 0x1000
+000010b7
+00008093
+// JALR ra, ra, 0
+// hex( (0x1 << 15) + (0x1 << 7) + (0b1100111) )
+000080e7
+
+/* End loop - TB can check here for end of program*/
+
+
+00000013
+00000013
+00000013
+fe000ae3 // BEQ R0, R0, -12 -> Loops forever
+

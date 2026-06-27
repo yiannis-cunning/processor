@@ -1,7 +1,7 @@
 
 
-`define PC_INIT 32'h100
 
+`include "cpu_defines.vh"
 
 module fetch(
     input wire resetn_i,
@@ -10,26 +10,26 @@ module fetch(
 
 
     // Fetch/Decode registers
-    output wire [6:0] opcode_reg_o,
-    output wire [31:0] instr_reg_o,
-    output wire [31:0] pc_p4_reg_o,
+    output reg [31:0]       instr_reg_o,
+    output reg [31:0]       pc_p4_reg_o,
 
     // Instruction RO interface
-    output wire [31:0] instr_raddr_o,
-    input wire  [31:0] instr_rdata_i,
+    output wire [31:0]      instr_raddr_o,
+    input wire  [31:0]      instr_rdata_i,
 
     // From Execute
-    input wire         branch_enable_i,
-    input wire [31:0]  pc_dest_i,
-    input wire         stall_enable_i
+    input wire              branch_enable_i,
+    input wire [31:0]       pc_dest_i,
+    input wire              stall_enable_i
 
 );
 
 
     reg [31:0] pc;
-    reg [6:0] opcode_r;
-    reg [24:0] instr_r;
-    reg [31:0] pc_p4_r;
+
+
+
+    assign instr_raddr_o = pc;
 
     // PC register
     always @(posedge clk_i, negedge resetn_i) begin
@@ -45,28 +45,28 @@ module fetch(
     // Fetch/Decode registers
     always @(posedge clk_i, negedge resetn_i) begin
         if(~resetn_i) begin
-            opcode_r <= 'd0;
-            instr_r <= 'd0;
-            pc_p4_r <= 'd0;
+            instr_reg_o     <= 32'h00000013;
+            pc_p4_reg_o     <= 'd0;
         end else begin
-            if(run_req_i & ~branch_enable_i) begin
-                instr_r     <= instr_rdata_i[31:7];
-                opcode_r    <= instr_rdata_i[6:0];
-                pc_p4_r     <= pc + 32'd4;
+            if(run_req_i) begin
+                if(branch_enable_i) begin               // Flush on a branch
+                    instr_reg_o     <= 32'h00000013;
+                    pc_p4_reg_o     <= pc + 32'd4;
+                end else if(stall_enable_i) begin       // Stall on a stall
+                    instr_reg_o <= instr_reg_o;
+                    pc_p4_reg_o <= pc_p4_reg_o;
+                end else begin
+                    instr_reg_o     <= instr_rdata_i[31:0];
+                    pc_p4_reg_o     <= pc + 32'd4;
+                end
             end else begin
                 // Just pass NOP / ADD R0 R0
-                opcode_r    <= 7'b0010011;
-                instr_r     <= 'd0; // {imm[11:0] = 0, rs1[4:0] = 0, b000, rd=0}
-                pc_p4_r     <= pc + 32'd4;
+                instr_reg_o     <= 32'h00000013;    // {imm[11:0] = 0, rs1[4:0] = 0, b000, rd=0, opcode=add}
+                pc_p4_reg_o     <= pc + 32'd4;
             end
         end
     end
 
 
-    assign instr_raddr_o = pc;
-
-    assign opcode_reg_o = opcode_r;
-    assign instr_reg_o = {instr_r, opcode_r};
-    assign pc_p4_reg_o = pc_p4_r;
 
 endmodule

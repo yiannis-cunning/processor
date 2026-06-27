@@ -21,6 +21,7 @@ module pipeline_top(
     output wire        data_rd_en_o,
     output wire [31:0] data_wr_addr_o,
     output wire [31:0] data_wr_data_o,
+    output wire [3:0]  data_mem_strb_en_o,
     output wire        data_wr_en_o
 
 );
@@ -32,12 +33,11 @@ module pipeline_top(
 
 
     // Fetch -> Decode interface
-    wire [6:0]  fetch_decode_opcode_int;
     wire [31:0] fetch_decode_instr_int;
     wire [31:0] fetch_decode_pc_p4_int;
 
     // Decode -> Execute interface
-    wire [10:0]  decode_execute_control_bits_int;
+    wire [14:0]  decode_execute_control_bits_int;
     wire [31:0] decode_execute_rs1_val_int;
     wire [31:0] decode_execute_rs2_val_int;
     wire [31:0] decode_execute_immd_val_int;
@@ -51,7 +51,7 @@ module pipeline_top(
     wire       hazard_detected_int;
 
     // Execute -> Memory interface
-    wire [2:0]  execute_memory_control_bits_int;
+    wire [14:0]  execute_memory_control_bits_int;
     wire [31:0] execute_memory_alu_res_int;
     wire [31:0] execute_memory_rs2_val_int;
     wire [4:0]  execute_memory_rd_addr_int;
@@ -77,7 +77,6 @@ module pipeline_top(
         .instr_rdata_i(instr_data_i),
         
         // To Decode
-        .opcode_reg_o(fetch_decode_opcode_int),
         .instr_reg_o(fetch_decode_instr_int),
         .pc_p4_reg_o(fetch_decode_pc_p4_int),
 
@@ -96,7 +95,6 @@ module pipeline_top(
         .flush_enable_i(execute_branch_enable_int || hazard_detected_int),
 
         // From Fetch
-        .opcode_reg_i(fetch_decode_opcode_int),
         .instr_reg_i(fetch_decode_instr_int),
         .pc_p4_reg_i(fetch_decode_pc_p4_int),
 
@@ -143,7 +141,7 @@ module pipeline_top(
 
         // To fetch
         .branch_enable(execute_branch_enable_int),
-        .pc_dest(execute_decode_pc_dest_int)
+        .branch_dest(execute_decode_pc_dest_int)
     );
 
     memory I_memory (
@@ -156,6 +154,7 @@ module pipeline_top(
         .rd_en_o(data_rd_en_o),
         .wr_addr_o(data_wr_addr_o),
         .wr_data_o(data_wr_data_o),
+        .mem_strb_en_o(data_mem_strb_en_o),
         .wr_en_o(data_wr_en_o),
 
         // From Execute
@@ -182,11 +181,11 @@ module pipeline_top(
 
         // From Execute
         .decode_execute_rd_addr_i(decode_execute_rd_addr_int),
-        .decode_execute_writeback_en(decode_execute_control_bits_int[6]),
+        .decode_execute_writeback_en(decode_execute_control_bits_int[`WRITE_BACK_EN_BITS]),
 
         // From Memory
         .execute_memory_rd_addr_i(execute_memory_rd_addr_int),
-        .execute_memory_writeback_en(execute_memory_control_bits_int[2]),
+        .execute_memory_writeback_en(execute_memory_control_bits_int[`WRITE_BACK_EN_BITS]),
 
         // To Fetch/Decode
         .hdu_dected_o(hazard_detected_int)

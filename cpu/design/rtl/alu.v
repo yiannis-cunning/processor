@@ -10,6 +10,8 @@
 `define OP_SRA 9
 `define OP_EQL 10
 
+`define OP_OUTV2 'd15
+
 module alu(
     input wire [31:0] val1,
     input wire [31:0] val2,
@@ -31,6 +33,7 @@ module alu(
             `OP_SLL : vout = val1 << val2[4:0];
             `OP_SRL : vout = val1 >> val2[4:0];
             `OP_SRA : vout = val1 >>> val2[4:0];
+            `OP_OUTV2 : vout = val2;
             default : vout = 32'b0;
         endcase
     end
