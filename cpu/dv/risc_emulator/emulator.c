@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 
 
@@ -188,6 +189,8 @@ void process_cmd(uint32_t instr_r){
     uint32_t immd_b, immd_i, immd_s, immd_u, immd_j;
     uint32_t opcode = get_bits(instr_r, 6, 0); 
 
+    uint32_t addr_eff, numbytes, strb_en, alu_res;
+
     // Common feilds
     rd = get_bits(instr_r, 11, 7); 
     rs1_val = cpu.reg[get_bits(instr_r, 19, 15)];
@@ -268,11 +271,11 @@ void process_cmd(uint32_t instr_r){
             break;
 
         case 0b0000011: // L* - Load
-            uint32_t addr_eff = rs1_val + immd_i;
+            addr_eff = rs1_val + immd_i;
 
             bool ld_unsigned = (get_bits(instr_r, 14, 14) == 0x1);
-            uint32_t numbytes = 1 << (get_bits(instr_r, 13, 12));
-            uint32_t strb_en = (1 << numbytes ) - 1;
+            numbytes = 1 << (get_bits(instr_r, 13, 12));
+            strb_en = (1 << numbytes ) - 1;
 
             passert((get_bits(instr_r, 13, 12) <= 2) && get_bits(instr_r, 14, 12) != 0b110, "Bad Load func3 value");
 
@@ -281,7 +284,7 @@ void process_cmd(uint32_t instr_r){
             
             break;
         case 0b0100011: // S - Store
-            uint32_t addr_eff, numbytes, strb_en;
+            addr_eff, numbytes, strb_en;
             
             addr_eff = rs1_val + immd_s;
             numbytes = 1 << get_bits(instr_r, 14, 12);
@@ -292,7 +295,7 @@ void process_cmd(uint32_t instr_r){
             cpu.pc = cpu.pc + 4;
             break;
         case 0b0010011: // Arithmetic with immediate
-            uint32_t alu_res;
+            alu_res = 0;
             uint32_t shamt = get_bits(instr_r, 24, 20);
 
             switch (get_bits(instr_r, 14, 12))
@@ -338,7 +341,7 @@ void process_cmd(uint32_t instr_r){
             cpu.pc = cpu.pc + 4;
             break;
         case 0b0110011: // Arithmetic with register
-            uint32_t alu_res;
+            alu_res = 0;
             uint32_t func7 = get_bits(instr_r, 31, 25);
             uint32_t func3 = get_bits(instr_r, 14, 12);
 
