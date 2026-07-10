@@ -9,9 +9,19 @@
 #include <unistd.h>
 
 
+typedef struct mem_segment_t {
+    uint8_t * mem;
+    uint32_t alloc_size;
+    uint32_t addr_base; // Address of First read-write-able byte
+    uint32_t addr_end;  // Address of Last read-write-able byte
+    mem_segment_t * next;
+} mem_segment_t;
+
 
 //  ****      Static Simulations structures      **** //
 typedef struct memory_t {
+    mem_segment_t *seg_head;
+
     uint8_t * main_mem;
     uint32_t mem_size_bytes;
 } memory_t;
@@ -180,8 +190,44 @@ void mem_init(char * memory_image){
 
 }
 
+void load_from_bin(){
+
+}
+
+void load_from_ihex(char *ihex_file){
+    int fd = 0;
+
+    fd = open()
+}
 
 
+
+void mem_init_real(uint32_t sp, uint32_t max_stack_size){
+    // A) Initialize memory structure
+    memory.seg_head = NULL;
+    
+    // B) Add new segment to load binary 
+    memory.seg_head = (mem_segment_t *)calloc(sizeof(mem_segment_t), 1);
+    memory.seg_head->alloc_size;
+    memory.seg_head->next = NULL;
+
+    // C) Add in stack segment
+    mem_segment_t * stack_seg = (mem_segment_t *)calloc(sizeof(mem_segment_t), 1);
+    stack_seg->alloc_size = max_stack_size;
+    stack_seg->addr_base = sp - max_stack_size;
+    stack_seg->addr_end = sp - 1;
+    stack_seg->mem = (uint32_t *)calloc(sizeof(uint8_t), max_stack_size);
+    stack_seg->next = NULL;
+
+    memory.seg_head->next = stack_seg;
+    
+}
+
+
+
+
+
+//  ****      Simulator Functions      **** //
 
 
 void process_cmd(uint32_t instr_r){
@@ -447,3 +493,13 @@ int main(int argv, char **argc){
     simulate(argc[1], strtoul(argc[2], NULL, 16));
 
 }
+
+
+// Memory:
+// input binary, or ihex, will specify some range of memory
+// binary = 0 -> N
+// ihex = X -> Y
+// Then the stack should be allocated starting at some address Z
+// it can grow, downwards to some max stack size W.
+// All accesses should be within
+// Total allocate
