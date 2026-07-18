@@ -9,6 +9,11 @@
 #include <unistd.h>
 
 
+#define ISHEXDIG(x) ( ((x >= '0') && (x <= '9')) || ((x >= 'a') && (x <= 'f')) || ((x >= 'A') && (x <= 'f')) )
+
+#define MAX_ICCM_DCCM_SIZE_B 0x10000
+
+
 typedef struct mem_segment_t {
     uint8_t * mem;
     uint32_t alloc_size;
@@ -194,10 +199,197 @@ void load_from_bin(){
 
 }
 
-void load_from_ihex(char *ihex_file){
-    int fd = 0;
 
-    fd = open()
+
+
+uint32_t atoi_nhex(char * buf, uint32_t nchars){
+    uint32_t ans = 0;
+    passert(nchars <= 8, "Number is too big for atoi_nhex");
+
+    for(int i = 0; i < nchars; i += 1){
+        ans = ans << 4;
+        
+        uint8_t inc =   ((buf[i] >= '0') && (buf[i] <= '9')) ? (buf[i] - '0') :
+                        ((buf[i] >= 'a') && (buf[i] <= 'f')) ? (buf[i] - 'a') :
+                        ((buf[i] >= 'A') && (buf[i] <= 'F')) ? (buf[i] - 'A') : (0xFF);
+        passert(inc <= 15, "Bad hex value in atoi_nhex conversion");
+
+        ans += inc;
+    }
+
+    return ans;
+
+}
+
+
+
+// Format:
+/*
+    line = ':(\w){8}(\w*)(\w){2}\r\n'
+    file = line*
+    Maybe no newline at end of file.
+
+*/
+mem_segment_t * load_from_ihex(char *ihex_file){
+    int fd = 0;
+    char buf[1024];
+    int n, bytes_read;
+    bool end_of_file = false;
+
+    fd = open(ihex_file, O_RDONLY);
+    assert(fd != -1, "Could not open ihex file");
+    printf("INFO: Reading in %s as a ihex file", ihex_file);
+
+
+    uint32_t max_used_addr = 0x0;
+    uint32_t min_used_addr = 0xFFFFFFFF;
+
+    while(!end_of_file)
+    {
+
+        // 1) Read in next full line 
+        bytes_read = 0;
+        n = 0;
+        while(1){
+            n = read(fd, buf + bytes_read, 1);
+            bytes_read += 1;
+            passert(n == 1, "Bad read from file");
+            if(buf[bytes_read - 1] == '\n'){
+                break;
+            }
+            passert(bytes_read < 550, "Buffer overflow"); // Each line should be maximum 523 bytes
+        }
+
+        passert( (bytes_read >= 13) && (bytes_read <= 269), "Line is too big or too small");
+
+        
+ 
+        // 2) check that line = ':(\w){8}(\w*)(\w){2}\r\n'
+        passert(buf[0] == ':', "Missing start : in ihex file.");
+        uint32_t cc_checksum = 0;
+        uint32_t ll_data_len = atoi_nhex(buf + 1, 2);
+        uint32_t aaaa_data_addr = atoi_nhex(buf + 3, 4);
+        uint32_t tt_rec_type = atoi_nhex(buf + 7, 2);
+
+        passert(bytes_read == (ll_data_len*2 + 13), "Bad line read in load_from_ihex, data length does not match bytes that were read.");
+
+        cc_checksum += ll_data_len + get_bits(aaaa_data_addr, 7, 0) + get_bits(aaaa_data_addr, 15, 8) + tt_rec_type;
+        for(int i = 0; i < ll_data_len*2; i += 2){
+            cc_checksum += atoi_nhex(buf + 9 + i, 2);
+        }
+        uint32_t cc_checksum_file = atoi_nhex(buf + 9 + ll_data_len*2, 2);
+        passert(cc_checksum == cc_checksum_file, "Bad checksum in ihex file");
+        passert(buf[11 + ll_data_len*2] == '\r', "Missing \\r in ihex file line");
+
+
+        switch(tt_rec_type)
+        {
+            case 00: // Data record
+                // 3) Get address range
+                uint32_t rec_start_addr = 0;
+                uint32_t rec_end_addr = 0;
+                rec_start_addr = aaaa_data_addr;
+                rec_end_addr = aaaa_data_addr + ll_data_len - 1;
+
+                min_used_addr = (rec_start_addr < min_used_addr) ? (rec_start_addr) : (min_used_addr);
+                max_used_addr = (rec_end_addr > max_used_addr) ? (rec_end_addr) : (max_used_addr);
+                break;
+            case 01: // EOF record
+                passert( (ll_data_len == 0) && (aaaa_data_addr == 0), "Bad EOF record in ihex file");
+                end_of_file = true;
+                break;
+
+            default:
+                passert(false, "Bad record type found in ihex file");
+        }
+
+    }
+
+    uint32_t iccm_dccm_size = max_used_addr - min_used_addr + 1;
+    passert(iccm_dccm_size <= MAX_ICCM_DCCM_SIZE_B, "ihex is too big for MAX_ICCM_DCCM_SIZE_B");
+
+    // Make block allocation    
+    mem_segment_t * iccm_dccm_seg = (mem_segment_t *)calloc(sizeof(mem_segment_t), 1);
+    iccm_dccm_seg->alloc_size = iccm_dccm_size;
+    iccm_dccm_seg->addr_base = min_used_addr;
+    iccm_dccm_seg->addr_end = max_used_addr;
+    iccm_dccm_seg->mem = (uint32_t *)calloc(sizeof(uint8_t), iccm_dccm_size);
+    iccm_dccm_seg->next = NULL;
+    
+
+
+    
+    // Fill in the allocation
+    passert( lseek(fd, 0, SEEK_SET) == 0, "Could not seek back to begining of ihex file");
+    end_of_file = false;
+    
+    while(!end_of_file)
+    {
+
+        // 1) Read in next full line 
+        bytes_read = 0;
+        n = 0;
+        while(1){
+            n = read(fd, buf + bytes_read, 1);
+            bytes_read += 1;
+            passert(n == 1, "Bad read from file");
+            if(buf[bytes_read - 1] == '\n'){
+                break;
+            }
+            passert(bytes_read < 550, "Buffer overflow"); // Each line should be maximum 523 bytes
+        }
+
+        passert( (bytes_read >= 13) && (bytes_read <= 269), "Line is too big or too small");
+
+        
+ 
+        // 2) check that line = ':(\w){8}(\w*)(\w){2}\r\n'
+        passert(buf[0] == ':', "Missing start : in ihex file.");
+        uint32_t cc_checksum = 0;
+        uint32_t ll_data_len = atoi_nhex(buf + 1, 2);
+        uint32_t aaaa_data_addr = atoi_nhex(buf + 3, 4);
+        uint32_t tt_rec_type = atoi_nhex(buf + 7, 2);
+
+        passert(bytes_read == (ll_data_len*2 + 13), "Bad line read in load_from_ihex, data length does not match bytes that were read.");
+
+        cc_checksum += ll_data_len + get_bits(aaaa_data_addr, 7, 0) + get_bits(aaaa_data_addr, 15, 8) + tt_rec_type;
+        for(int i = 0; i < ll_data_len*2; i += 2){
+            cc_checksum += atoi_nhex(buf + 9 + i, 2);
+        }
+        uint32_t cc_checksum_file = atoi_nhex(buf + 9 + ll_data_len*2, 2);
+        passert(cc_checksum == cc_checksum_file, "Bad checksum in ihex file");
+        passert(buf[11 + ll_data_len*2] == '\r', "Missing \\r in ihex file line");
+
+
+        switch(tt_rec_type)
+        {
+            case 00: // Data record
+                // 3) Get address range
+                uint32_t rec_start_addr = 0;
+                uint32_t rec_end_addr = 0;
+                rec_start_addr = aaaa_data_addr;
+                rec_end_addr = aaaa_data_addr + ll_data_len - 1;
+
+                // Copy in data to allocation
+                for(int i = 0; i < ll_data_len; i += 1){
+                    passert( (rec_start_addr - iccm_dccm_seg->addr_base + i) < iccm_dccm_size , "Out of bounds access");
+                    iccm_dccm_seg->mem[rec_start_addr - iccm_dccm_seg->addr_base + i] = atoi_nhex(buf + 9 + i*2, 2);
+                }
+
+                break;
+            case 01: // EOF record
+                passert( (ll_data_len == 0) && (aaaa_data_addr == 0), "Bad EOF record in ihex file");
+                end_of_file = true;
+                break;
+
+            default:
+                passert(false, "Bad record type found in ihex file");
+        }
+
+    }
+
+
+    return iccm_dccm_seg;
 }
 
 
