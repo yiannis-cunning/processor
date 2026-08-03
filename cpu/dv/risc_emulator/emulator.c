@@ -7,11 +7,21 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
+extern char * optarg;
+
+
+
+//  ****      Defines/Macros      **** //
 
 #define ISHEXDIG(x) ( (( (x) >= '0') && ( (x) <= '9')) || (( (x) >= 'a') && ( (x) <= 'f')) || (( (x) >= 'A') && ( (x) <= 'f')) )
 #define ISOUTSIDE(x, low, high)  ( ( (x) <  (low) ) || ( (x) >  (high) ) )
-#define ISINSIDE(x, low, high)   ( ( (x) >= (low) ) || ( (x) <= (high) ) )
+#define ISINSIDE(x, low, high)   ( ( (x) >= (low) ) && ( (x) <= (high) ) )
+
+#define PASSERT_DEF(cond, stmnt) if(!(cond)){printf("ERROR: "); stmnt; printf("\n"); exit(1);}
+
+//#define PASSERT_DEF(cond, ) if(! cond ) {printf(); exit(1);}
 
 #define MAX_ICCM_DCCM_SIZE_B 0x10000
 // Stack should be word aligned ...
@@ -19,14 +29,35 @@
 #define MAX_STACK_SIZE      0x10000
 #define PC_QUIT_ADDR        0x10000
 
+#define DEBUG
+#define PRINT_ALL_MEM
+
+
+
+
+
+
+
 
 typedef struct mem_segment_t {
     uint8_t * mem;
     uint32_t alloc_size;
     uint32_t addr_base; // Address of First read-write-able byte
     uint32_t addr_end;  // Address of Last read-write-able byte
-    mem_segment_t * next;
+    struct mem_segment_t * next;
 } mem_segment_t;
+
+typedef struct simargs_t {
+    uint32_t PC_start_addr;
+    
+    char *ihex_file_i;
+
+    uint32_t mem_save_start_addr;
+    uint32_t mem_save_nwords;
+    char * mem_save_file_o;
+    bool save_mem_to_file;
+
+} simargs_t;
 
 
 //  ****      Static Simulations structures      **** //
@@ -38,7 +69,7 @@ typedef struct memory_t {
 } memory_t;
 
 typedef struct risk_core {
-    uint32_t reg[32];
+    uint32_t reg[33];
     uint32_t pc;
 } risk_core_t;
 
@@ -47,14 +78,26 @@ static memory_t memory = {0};
 
 static risk_core_t cpu = {0};
 
+static simargs_t simargs = {0};
+
 
 
 
 //  ****      Helper Functions      **** //
 void passert(bool cond, char * msg){
-    if(~cond){
+    if(! cond){
         printf("ERROR: %s\n", msg);
+        exit(1);
     }
+}
+
+void *safe_calloc(size_t nmemb, size_t size ){
+    void *p = calloc(nmemb, size);
+    if(p == NULL){
+        printf("Could not make allocation of size %d bytes \n", nmemb*size);
+        exit(1);
+    }
+    return p;
 }
 
 uint32_t get_bits(uint32_t num, uint32_t msb, uint32_t lsb){
@@ -91,26 +134,45 @@ uint32_t get_bits_signed(uint32_t num, uint32_t msb, uint32_t lsb) {
 
 
 
-//  ****      Memory Functions      **** //
+
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+//  ****      Memory Functions          **** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+
+
 mem_segment_t *get_seg(uint32_t addr, uint8_t strb_en)
 {	
-  // Byte addressable, little endian
+    // Byte addressable, little endian
     uint32_t rdata;
     uint32_t nbytes, align_mask;
-    mem_segment_t *seg = memory.seg_head;
+    mem_segment_t *seg = NULL;
+    
     
     // 1) Find corresponding segment
+    seg = memory.seg_head;
     while(seg != NULL){
         if( ISINSIDE(addr, seg->addr_base, seg->addr_end) ){
             break;
         }
         seg = seg->next;
     }
-    passert(seg != NULL, "Memory access belongs to no mapped segments.");
+    //passert(seg != NULL, "Memory access belongs to no mapped segments.");
+    PASSERT_DEF( seg != NULL, printf("Memory access to %x belongs to no mapped segments.\n", addr) );
     passert(strb_en == 0x1 || strb_en == 0x3 || strb_en == 0xF, "Bad byte select value");
-
-    nbytes = ones(strb_en); // 1, 2 or 4
-    align_mask = (1 << (nbytes - 1)) - 1;
+    nbytes      = (strb_en == 0x1) ? (1) : ( (strb_en == 0x3) ? (2) : (4));
+    align_mask  = (strb_en == 0x1) ? (0) : ( (strb_en == 0x3) ? (0x1) : (0x3));
 
     // 2) Check alignment
     passert( (addr & align_mask) == 0, "Memory read is out of alignment");
@@ -123,28 +185,49 @@ mem_segment_t *get_seg(uint32_t addr, uint8_t strb_en)
 uint32_t mem_read(uint32_t raddr, uint8_t strb_en, bool load_unsigned){
     // Byte addressable, little endian
     uint32_t rdata;
-    uint32_t nbytes = ones(strb_en);
     mem_segment_t *seg = get_seg(raddr, strb_en);
+    int nbytes = (strb_en == 0x1) ? (1) : ( (strb_en == 0x3) ? (2) : (4));
+
 
     // 3) Read byte from mem.
     rdata = load_unsigned ? (0) : (0xFFFFFFFF);
-    for(uint32_t i = nbytes - 1; i >= 0; i -= 1){   // Little endian
+    for(int i = nbytes - 1; i >= 0; i -= 1){   // Little endian
         rdata = (rdata << 8);
-        passert( ISINSIDE(raddr + i - seg->addr_base, 0, seg->alloc_size - 1), "Out of bounds access");
+        
+        if(!ISINSIDE(raddr + i - seg->addr_base, 0, seg->alloc_size - 1))
+        {
+            printf("nbytes = ");
+            printf("acess to %d not within array bounds of %d, i = %d ",raddr + i - seg->addr_base, 0, i);
+        }
+
+        passert( ISINSIDE(raddr + i - seg->addr_base, 0, seg->alloc_size - 1), "Out of bounds access for memory read");
         rdata += (uint32_t) seg->mem[raddr + i - seg->addr_base];
     }
+
+    #ifdef PRINT_ALL_MEM
+    printf("READ: to address = %x. rdata = %x, strb_en = %x\n", raddr, rdata, strb_en);
+    #endif
+
 
     return rdata;
 }
 
 void mem_write(uint32_t waddr, uint32_t wdata, uint32_t strb_en){
     // Byte addressable, little endian
-    mem_segment_t *seg = get_seg(waddr, strb_en);
-    uint32_t nbytes = ones(strb_en);
+    mem_segment_t *seg = NULL; 
+    uint32_t nbytes = 0;
+
+    #ifdef PRINT_ALL_MEM
+    printf("Got a write to address %x of value %x, with strb_en = %x\n", waddr, wdata, strb_en);
+    #endif
+
+
+    seg = get_seg(waddr, strb_en);
+    nbytes = (strb_en == 0x1) ? (1) : ( (strb_en == 0x3) ? (2) : (4));
 
     // 3) Write bytes to mem
     for(uint32_t i = 0; i < nbytes; i += 1){   // Little endian
-        passert( ISINSIDE(waddr + i - seg->addr_base, 0, seg->alloc_size - 1), "Out of bounds access");
+        passert( ISINSIDE(waddr + i - seg->addr_base, 0, seg->alloc_size - 1), "Out of bounds access for memory write");
         seg->mem[waddr + i - seg->addr_base] = (uint8_t)(wdata & 0xFF);
         wdata = wdata >> 8;
     }
@@ -204,8 +287,8 @@ uint32_t atoi_nhex(char * buf, uint32_t nchars){
         ans = ans << 4;
         
         uint8_t inc =   ((buf[i] >= '0') && (buf[i] <= '9')) ? (buf[i] - '0') :
-                        ((buf[i] >= 'a') && (buf[i] <= 'f')) ? (buf[i] - 'a') :
-                        ((buf[i] >= 'A') && (buf[i] <= 'F')) ? (buf[i] - 'A') : (0xFF);
+                        ((buf[i] >= 'a') && (buf[i] <= 'f')) ? (buf[i] - 'a' + 10) :
+                        ((buf[i] >= 'A') && (buf[i] <= 'F')) ? (buf[i] - 'A' + 10) : (0xFF);
         passert(inc <= 15, "Bad hex value in atoi_nhex conversion");
 
         ans += inc;
@@ -217,8 +300,9 @@ uint32_t atoi_nhex(char * buf, uint32_t nchars){
 
 
 typedef enum {
-    DATA_RECORD = 0,
-    EOF_RECORD = 1
+    eDATA_RECORD = 0,
+    eEOF_RECORD = 1,
+    eSTART_SEG_ADDR_RECORD = 3
 } e_ihex_record_type;
 
 typedef struct ihex_entry_t{
@@ -232,7 +316,7 @@ typedef struct ihex_entry_t{
 
 
 
-void get_next_record(int fd, ihex_entry_t *record){
+void get_next_record(int fd, ihex_entry_t *record, int *linenum){
     int bytes_read, n;
     char buf[1024];
 
@@ -248,6 +332,7 @@ void get_next_record(int fd, ihex_entry_t *record){
         }
         passert(bytes_read < 550, "Buffer overflow"); // Each line should be maximum 523 bytes
     }
+    buf[bytes_read] = 0;
 
     
     
@@ -266,7 +351,26 @@ void get_next_record(int fd, ihex_entry_t *record){
     for(int i = 0; i < ll_data_len*2; i += 2){
         cc_checksum += atoi_nhex(buf + 9 + i, 2);
     }
+    //cc_checksum = ((~(cc_checksum & 0xFF)) + 1) & 0xFF;
+
+    cc_checksum = 0;
+    for(int j = 1; j < 1 + 8 + ll_data_len*2; j += 2){
+        cc_checksum += atoi_nhex(buf + j, 2);
+        //printf("Adding %c%c = %x to checksum\n", buf[j], buf[j + 1], atoi_nhex(buf + j, 2) );
+    }
+    cc_checksum = (~cc_checksum) + 1;
+    cc_checksum = ( cc_checksum & 0xff) ;
+    
     uint32_t cc_checksum_file = atoi_nhex(buf + 9 + ll_data_len*2, 2);
+
+    #ifdef DEBUG
+
+    //printf("DEBUG INFO:  Reading line %d. Got type=%d, nbytes=%d, addr=%x, checksum from file=%x, checksum computed %x\n", *linenum, tt_rec_type, ll_data_len, aaaa_data_addr, cc_checksum_file, cc_checksum);
+    //printf("DEBUG INFO:  Input file line %s\n", buf);
+    
+    #endif
+
+
     passert(cc_checksum == cc_checksum_file, "Bad checksum in ihex file");
     passert(buf[11 + ll_data_len*2] == '\r', "Missing \\r in ihex file line");
 
@@ -286,15 +390,16 @@ void get_next_record(int fd, ihex_entry_t *record){
 
     // 4) More assertions based on type
     switch(record->rec_type){
-        case DATA_RECORD: // Data record
+        case eDATA_RECORD: // Data record
             // No conditions ...
             break;
-        case EOF_RECORD: // EOF record
+        case eEOF_RECORD: // EOF record
             // All other entries should be 0
-            passert( (record->num_bytes == 0) && (record->addr == 0), "Bad EOF record in ihex file");
+            passert( (record->num_bytes == 0) && (record->addr == 0), "Bad EOF record in ihex file on line");
             break;
     }
 
+    *linenum += 1;
     return;
 
 }
@@ -305,70 +410,105 @@ void get_next_record(int fd, ihex_entry_t *record){
     file = line*
     Maybe no newline at end of file.
 
+    line =  <LL, Record length Bytes> (2), 
+            <AAAA, address> (4), 
+            <TT, record type> (2), 
+            <Data> (LL * 2), 
+            <cc, checksum> (2)
+
+
+iHex file format:
+    https://support.arm.com/documentation/ka003292/1-0/
+    https://en.wikipedia.org/wiki/Intel_HEX
+
 */
 mem_segment_t * load_from_ihex(char *ihex_file){
     int fd = 0;
+    int linenum = 0;
     ihex_entry_t record = {0};
     bool end_of_file = false;
-
+    
     fd = open(ihex_file, O_RDONLY);
-    assert(fd != -1, "Could not open ihex file");
-    printf("INFO: Reading in %s as a ihex file", ihex_file);
+    PASSERT_DEF(fd != -1, printf("Could not open ihex file %s", ihex_file);)
+    printf("INFO: Reading in %s as a ihex file\n", ihex_file);
 
 
     uint32_t max_used_addr = 0x0;
     uint32_t min_used_addr = 0xFFFFFFFF;
 
-    while(~end_of_file)
+    while(! end_of_file)
     {
-        get_next_record(fd, &record);
+        get_next_record(fd, &record, &linenum);
     
         switch(record.rec_type)
         {
-            case DATA_RECORD: // Data record
+            case eDATA_RECORD: // Data record
                 min_used_addr = (record.addr < min_used_addr) ? (record.addr) : (min_used_addr);
                 max_used_addr = (record.addr_end > max_used_addr) ? (record.addr_end) : (max_used_addr);
                 break;
-            case EOF_RECORD: // EOF record
+            case eEOF_RECORD: // EOF record
                 end_of_file = true;
                 break;
         }
     }
 
+    // Round max address to by word aligned - i.e. 4 bytes.
+
+    max_used_addr = (max_used_addr | 0x3);
+
     uint32_t iccm_dccm_size = max_used_addr - min_used_addr + 1;
     passert(iccm_dccm_size <= MAX_ICCM_DCCM_SIZE_B, "ihex is too big for MAX_ICCM_DCCM_SIZE_B");
 
+
+    #ifdef DEBUG
+
+    printf("DEBUG: Address range found in ihex file: %x - %x. Size = %x bytes\n", min_used_addr, max_used_addr, iccm_dccm_size);
+
+    #endif
+
+
     // Make block allocation    
-    mem_segment_t * iccm_dccm_seg = (mem_segment_t *)calloc(sizeof(mem_segment_t), 1);
-    iccm_dccm_seg->alloc_size = iccm_dccm_size;
-    iccm_dccm_seg->addr_base = min_used_addr;
-    iccm_dccm_seg->addr_end = max_used_addr;
-    iccm_dccm_seg->mem = (uint32_t *)calloc(sizeof(uint8_t), iccm_dccm_size);
+    mem_segment_t * iccm_dccm_seg   = (mem_segment_t *)safe_calloc(sizeof(mem_segment_t), 1);
+    iccm_dccm_seg->alloc_size       = iccm_dccm_size;
+    iccm_dccm_seg->addr_base        = min_used_addr;
+    iccm_dccm_seg->addr_end         = max_used_addr;
+    iccm_dccm_seg->mem = (uint8_t *)safe_calloc(sizeof(uint8_t), iccm_dccm_size);
     iccm_dccm_seg->next = NULL;
     
     
     // Fill in the allocation
     passert( lseek(fd, 0, SEEK_SET) == 0, "Could not seek back to begining of ihex file");
     end_of_file = false;
+    linenum = 0;
     
     while(!end_of_file)
     {
-        get_next_record(fd, &record);
+        get_next_record(fd, &record, &linenum);
 
-        if(record.rec_type == DATA_RECORD) {
-            // Copy in data to allocation
-            memcpy(iccm_dccm_seg->mem + record.addr, record.data, record.num_bytes);
+        switch(record.rec_type)
+        {
+            case eDATA_RECORD: // Data record
+                // Copy in data to allocation
+                passert(    ISINSIDE(   (uint64_t) (iccm_dccm_seg->mem + record.addr - iccm_dccm_seg->addr_base),\
+                                        (uint64_t) iccm_dccm_seg->mem, \
+                                        (uint64_t) (iccm_dccm_seg->mem + iccm_dccm_size - 1)), \
+                 "Writing outside of segment allocation");
+                
+                memcpy(iccm_dccm_seg->mem + record.addr - iccm_dccm_seg->addr_base, record.data, record.num_bytes);
+                break;
+            case eSTART_SEG_ADDR_RECORD: // EOF record
+                passert(record.num_bytes == 4, "PC start record does not have 4 bytes");
+                printf("INFO: PC starting address found as %x in ihex file\n", (record.data[2] << 8) + record.data[3] );
+                break;
+            case eEOF_RECORD: // EOF record
+                end_of_file = true;
+                break;
+            default:
+                passert(false, "Bad record type found in ihex file");
         }
-        else if(record.rec_type == EOF_RECORD) {
-            end_of_file = true;
-        }
-        else {
-            passert(false, "Bad record type found in ihex file");
-        }
-
     }
 
-
+    printf("INFO: Done loading from ihex file, %p, %d\n", iccm_dccm_seg, iccm_dccm_size);
     return iccm_dccm_seg;
 }
 
@@ -387,35 +527,43 @@ void mem_init(uint32_t sp, uint32_t max_stack_size, char *ihex_file){
     // B) Add new segment to load binary 
     iccm_dccm_seg = load_from_ihex(ihex_file);
 
+
     // C) Add in stack segment
-    stack_seg = (mem_segment_t *)calloc(sizeof(mem_segment_t), 1);
+    stack_seg = (mem_segment_t *)safe_calloc(sizeof(mem_segment_t), 1);
     stack_seg->alloc_size = max_stack_size;
     stack_seg->addr_base = sp - max_stack_size;
     stack_seg->addr_end = sp - 1;
-    stack_seg->mem = (uint32_t *)calloc(sizeof(uint8_t), max_stack_size);
+    stack_seg->mem = (uint8_t *)safe_calloc(sizeof(uint8_t), max_stack_size);
     stack_seg->next = NULL;
 
     // D) Link together
     memory.seg_head = iccm_dccm_seg;
     iccm_dccm_seg->next = stack_seg;
 
+
+
     // E) Checks
     mem_segment_t *segtemp = memory.seg_head;
     mem_segment_t *otherseg = NULL;
-    while(segtemp){
+    int i = 0;
+    while(segtemp != NULL){
 
         // Check that every segment is aligned.
+        printf("Segment %d. From address %x - %x. \n", i, segtemp->addr_base, segtemp->addr_end);
         passert( ((segtemp->addr_base & 0x3) == 0) && (( (segtemp->addr_end + 1) & 0x3) == 0), "Segment is not aligned");
 
         // and no segments overlap
         otherseg = memory.seg_head;
         while(otherseg != NULL){
-            passert( ISOUTSIDE(otherseg->addr_base, segtemp->addr_base, segtemp->addr_end), "Segments overlap" );
-            passert( ISOUTSIDE(otherseg->addr_end,  segtemp->addr_base, segtemp->addr_end), "Segments overlap" );
+            if(otherseg != segtemp){
+                passert( ISOUTSIDE(otherseg->addr_base, segtemp->addr_base, segtemp->addr_end), "Segments overlap" );
+                passert( ISOUTSIDE(otherseg->addr_end,  segtemp->addr_base, segtemp->addr_end), "Segments overlap" );
+            }
             otherseg = otherseg->next;
         }
 
         segtemp = segtemp->next;
+        i += 1;
     }
 
 
@@ -428,8 +576,21 @@ void mem_init(uint32_t sp, uint32_t max_stack_size, char *ihex_file){
 
 
 
-
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
 //  ****      Simulator Functions      **** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
+// ***************************************** //
 
 
 void process_cmd(uint32_t instr_r){
@@ -441,6 +602,7 @@ void process_cmd(uint32_t instr_r){
 
     // Common feilds
     rd = get_bits(instr_r, 11, 7); 
+    rd = (rd == 0) ? (32) : (rd); // writes to r0 have no affect
     rs1_val = cpu.reg[get_bits(instr_r, 19, 15)];
     rs2_val = cpu.reg[get_bits(instr_r, 24, 20)];
 
@@ -513,8 +675,10 @@ void process_cmd(uint32_t instr_r){
 
             if(branch_cond){
                 cpu.pc = cpu.pc + immd_b;
+                printf("Branch passed: rs1 = %x, rs2 = %x\n", rs1_val, rs2_val);
             } else{
                 cpu.pc = cpu.pc + 4;
+                printf("Branch failedrs1 = %x, rs2 = %x. r0 = %d\n", rs1_val, rs2_val, cpu.reg[0]);
             }
             break;
 
@@ -536,7 +700,7 @@ void process_cmd(uint32_t instr_r){
             
             addr_eff = rs1_val + immd_s;
             numbytes = 1 << get_bits(instr_r, 14, 12);
-            passert(numbytes <= 2, "Bad Store func3 value");
+            passert(numbytes <= 4, "Bad Store func3 value");
             strb_en = (1 << numbytes ) - 1;
 
             mem_write(addr_eff, rs2_val, strb_en);
@@ -661,25 +825,72 @@ void process_cmd(uint32_t instr_r){
 
 
 
+/*
+Saves mem from start_addr -> start_addr + nbytes to file.
+
+Format: (%x is a full word)
+
+%x-%x-%x ... %x (x16)
+...
+%x-%x-%x
+
+*/
+void save_mem_to_file(char * outfile, uint32_t start_addr, uint32_t nwords){
+    int fd = open(outfile, O_WRONLY | O_CREAT, 0666);
+
+    passert(nwords <= 0x10000, "Trying to save too many bytes to file");
+
+    // Print output data
+    for(int i = 0; i < nwords; i += 1){
+
+        uint32_t rdata = mem_read(start_addr + i*4, 0xF, true);
+
+        if( (i % 16) != 0){
+            dprintf(fd, "-");
+        }
+        dprintf(fd, "%08x", rdata);
+
+        if( ( (i + 1) % 16) == 0){
+            dprintf(fd, "\n");
+        }
+        
+    }
+    
+}
+
+
 
 void simulate(char *memory_image, uint32_t pc_start){
+
+
     printf("Running simulation with memory image file %s, and pc start address %u\n", memory_image, pc_start);
-    printf("Initializing with stack start addr %d, and size %d\n", STACK_START_ADDR, MAX_STACK_SIZE);
+    printf("INFO: Initializing with stack start addr %x, and size %x\n", STACK_START_ADDR, MAX_STACK_SIZE);
     mem_init(STACK_START_ADDR, MAX_STACK_SIZE, memory_image);
+    printf("INFO: Done setting up memory. Running program.\n");
 
 
     // CPU core struct = cpu;
     // Memory core struct = memory;
 
     uint32_t program_end_addr = PC_QUIT_ADDR;
-    uint32_t max_cmds = 10000;
+    uint32_t max_cmds = 100000;
     cpu.pc = pc_start;
+    cpu.reg[2] = STACK_START_ADDR;      // Set stack address
+    cpu.reg[1] = PC_QUIT_ADDR;          // Set return address
+
+
+    printf("Printing Data section\n");
+    for(int i = 0; i < 31; i += 1){
+        printf("Byte %d = %x or %c\n", i, (uint8_t)mem_read(0x2000 + i, 0x1, true), (char)mem_read(0x2000 + i, 0x1, true));
+    }
+
 
     uint32_t cmds_done = 0;
     uint32_t instr_r = 0;
     while( (cpu.pc != program_end_addr) && (cmds_done < max_cmds)){
         
         instr_r = mem_read(cpu.pc, 0xf, true); 
+        printf("Processing instruction at pc = %x : %x\n", cpu.pc, instr_r);
         process_cmd(instr_r); 
 
         cmds_done += 1;
@@ -690,16 +901,70 @@ void simulate(char *memory_image, uint32_t pc_start){
     } else if(cmds_done == max_cmds){
         printf("Quitting program after reaching maximum commands %d\n", max_cmds);
     }
+
+    // Print memory location of arr
+
+    printf("Printing Data section\n");
+    for(int i = 0; i < 31; i += 1){
+        printf("Byte %d = %x or %c\n", i, (uint8_t)mem_read(0x2000 + i, 0x1, true), (char)mem_read(0x2000 + i, 0x1, true));
+    }
+
+    // Save memory sub-section to memory
+    if(simargs.save_mem_to_file){
+        save_mem_to_file(simargs.mem_save_file_o, simargs.mem_save_start_addr, simargs.mem_save_nwords);
+    }
     
 }
 
 
 
-int main(int argv, char **argc){
-    // ./emulator <memory_image> <PC_start_addr>
-    passert(argv == 3, "Usage: ./emulator <memory_image> <PC_start_addr>");
+
+void save_args(int argc, char **argv){
+
+    // Mandatory args
+    simargs.ihex_file_i = argv[1];
+    simargs.PC_start_addr = strtoul(argv[2], NULL, 0);
+
+    int opt;
+    while ((opt = getopt(argc, argv, "ho:s:n:")) != -1) {
+        switch (opt) {
+            case 'h':
+                printf("Usage: ./emulator <memory_image> <PC_start_addr>\n");
+                exit(1);
+            case 'o':
+                simargs.mem_save_file_o = optarg;
+                printf("Saving memory to file: %s\n", optarg);
+                break;
+            case 's':
+                simargs.mem_save_start_addr = strtoul(optarg, NULL, 0);
+                printf("Save memory start address: %s\n", optarg);
+                break;
+            case 'n':
+                simargs.mem_save_nwords = strtoul(optarg, NULL, 0);
+                printf("Saving n bytes of memory: %s\n", optarg);
+                break;
+            default:
+                fprintf(stderr, "Unknown option.\n");
+                exit(1);
+        }
+    }
     
-    simulate(argc[1], strtoul(argc[2], NULL, 16));
+    
+    simargs.save_mem_to_file = (simargs.mem_save_file_o != NULL);
+    PASSERT_DEF(simargs.mem_save_nwords <= 0x10000, printf("Memory save amount is too big...\n");)
+    PASSERT_DEF((simargs.mem_save_start_addr & 0x3) == 0, printf("Memory save start address must be word-aligned...\n");)
+
+}
+
+int main(int argc, char **argv){
+    // ./emulator <memory_image> <PC_start_addr>
+    //printf("argc = %d\n", argc);
+    passert(argc >= 3, "Usage: ./emulator <memory_image> <PC_start_addr>");
+    
+
+    save_args(argc, argv);
+
+    simulate(simargs.ihex_file_i, simargs.PC_start_addr);
 
 }
 
