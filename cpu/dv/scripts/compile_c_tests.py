@@ -19,10 +19,6 @@ def get_files(dir_path, expr):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Compile all C tests into RISC binarys and generate program traces/expected output.')
-    
-    #parser.add_argument('-o', '--out_dir')                            # option that takes a value
-    #parser.add_argument('-c', '--compile_only', action='store_true')                            # option that takes a value
-    #parser.add_argument('-v', '--verbose', action='store_true')     # on/off flag
     args = parser.parse_args()
 
     # Check root is set
@@ -30,15 +26,8 @@ if __name__ == "__main__":
     assert ROOT, "ERROR: ROOT varaiable must be set"
 
     # Setup search paths
-    vivado_dir = "/home/cunningy/Desktop/Xilinx/Vivado/2023.2/bin/"
-    rtl_dir = ROOT + "/cpu/design/rtl/"
-    tb_dir = ROOT + "/cpu/dv/hdl/"
-    scripts_dir = ROOT + "/cpu/dv/scripts/"
-    top_module = "tb_top"
-    worklib_name = "worklib"
-
-    c_tests_dir = ROOT + "cpu/dv/c_tests/"
-    risc_emulator_dir = ROOT + "cpu/dv/risc_emulator/"
+    c_tests_dir = ROOT + "/cpu/dv/c_tests/"
+    risc_emulator = ROOT + "/cpu/dv/risc_emulator/build/emulator"
     result = ""
 
 
@@ -48,11 +37,13 @@ if __name__ == "__main__":
 
     build_dir = f"{c_tests_dir}/build"
     if(os.path.exists(build_dir)):
+        print(f"Deleting directory {build_dir}")
         shutil.rmtree(build_dir)
     os.mkdir(build_dir)
 
     for cfile in tests:
-        x = re.search("^test_(\w+).c$", cfile)
+
+        x = re.search("^.*/(test_\w+).c$", cfile)
         testname = x.group(1)
 
         print(f"Compiling test {cfile}")
@@ -70,24 +61,43 @@ if __name__ == "__main__":
         os.mkdir(testoutdir)
         commands = [
             f"gcc {cfile} {main_file} -o {testoutdir}/{testname}_x86.exe -D COMPILE_X86",
-            f"clang --target=riscv32 -march=rv32i -mabi=ilp32d {mainfile} -S -o {testoutdir}/{testname}_main_risc.asm",
-            f"clang --target=riscv32 -march=rv32i -mabi=ilp32d {cfile} -S -o {testoutdir}/{testname}_test_risc.asm",
-            f"clang --target=riscv32 -march=rv32g -mabi=ilp32d -mno-relax {testoutdir}/{testname}_main_risc.asm -c -o {testoutdir}/{testname}_main_risc.obj",
-            f"clang --target=riscv32 -march=rv32g -mabi=ilp32d -mno-relax {testoutdir}/{testname}_test_risc.asm -c -o {testoutdir}/{testname}_test_risc.obj",
+            f"clang --target=riscv32 -march=rv32i -mabi=ilp32 {main_file} -S -o {testoutdir}/{testname}_main_risc.asm",
+            f"clang --target=riscv32 -march=rv32i -mabi=ilp32 {cfile} -S -o {testoutdir}/{testname}_test_risc.asm",
+            f"clang --target=riscv32 -march=rv32g -mabi=ilp32 -mno-relax {testoutdir}/{testname}_main_risc.asm -c -o {testoutdir}/{testname}_main_risc.obj",
+            f"clang --target=riscv32 -march=rv32g -mabi=ilp32 -mno-relax {testoutdir}/{testname}_test_risc.asm -c -o {testoutdir}/{testname}_test_risc.obj",
             f"ld.lld {testoutdir}/{testname}_main_risc.obj {testoutdir}/{testname}_test_risc.obj -o {testoutdir}/{testname}_risc.elf -static --section-start=.text=1000 --section-start=.data=2000",
             f"llvm-objcopy-14 --output-target=ihex {testoutdir}/{testname}_risc.elf {testoutdir}/{testname}_risc.ihex --set-start=1000",
             f"llvm-objcopy-14 --output-target=binary {testoutdir}/{testname}_risc.elf {testoutdir}/{testname}_risc.bin --set-start=1000"
         ]
 
         for c in commands:
+            print("Running: ", c)
             result = subprocess.run(c,shell=True, text=True)
             # assert result.returncode == 0, f"ERROR: failed to compile test: {filename}"
-            assert subprocess.run(c,shell=True, text=True).returncode == 0, f"ERROR: failed to compile test: {filename}"
+            assert subprocess.run(c,shell=True, text=True).returncode == 0, f"ERROR: failed to compile test: {testname}"
         
         # Run x86 exe
+        print("Running: ", f"{testoutdir}/{testname}_x86.exe")
         result = subprocess.run(f"{testoutdir}/{testname}_x86.exe",shell=True, text=True, capture_output=True)
-        with open(f"{testoutdir}/{testname}/{testname}_x86.out", "w") as f:
+        with open(f"{testoutdir}/{testname}_x86.out", "w") as f:
             f.write(result.stdout)
+
+
+        # Run with emulator
+        pc_start_addr = "0x1000"
+        data_start_addr = "0x2000"
+        data_size_words = "1024"
+        emulator_cmd = f"{risc_emulator} {testoutdir}/{testname}_risc.ihex {pc_start_addr} -o {testoutdir}/{testname}_emulator.out -s {data_start_addr} -n {data_size_words}"
+
+        # Run emulator
+        print("Running: ", emulator_cmd)
+        result = subprocess.run(emulator_cmd, shell=True, capture_output=True)
+
+        # Diff emulator vs x86
+        diffcmd = f"diff {testoutdir}/{testname}_emulator.out {testoutdir}/{testname}_x86.out"
+        result = subprocess.run(diffcmd, shell=True, text=True, capture_output=True)
+        if(result.stdout != ""):
+            print(f"ERROR: Emulator output does not match native x86 output for {cfile}")
 
 
     exit(1)

@@ -1,0 +1,9 @@
+Looking at the test_1.c, this does some operations on a unsigned integer array of size TEST_SIZE_W.
+
+Could you make 10 other tests which each target testing of some instructions of the RISC RV32-I instruction set?
+
+Specifically the attached instructions.
+
+The tests should still be able to compile for x86 so no assembly code.
+
+The test name should be in the format test_<testname>.c

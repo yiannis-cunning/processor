@@ -1,7 +1,7 @@
 	.text
 	.attribute	4, 16
 	.attribute	5, "rv32i2p0"
-	.file	"test1.c"
+	.file	"test_1.c"
 	.globl	test_main
 	.p2align	2
 	.type	test_main,@function

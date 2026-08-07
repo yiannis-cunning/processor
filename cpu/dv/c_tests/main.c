@@ -2,8 +2,6 @@
 #ifdef COMPILE_X86
 #include <stdio.h>
 #endif
-#include <stdint.h>
-
 
 #include "common.h"
 

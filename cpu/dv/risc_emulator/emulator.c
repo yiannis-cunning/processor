@@ -29,7 +29,7 @@ extern char * optarg;
 #define MAX_STACK_SIZE      0x10000
 #define PC_QUIT_ADDR        0x10000
 
-#define DEBUG
+//#define DEBUG
 #define PRINT_ALL_MEM
 
 
@@ -879,10 +879,12 @@ void simulate(char *memory_image, uint32_t pc_start){
     cpu.reg[1] = PC_QUIT_ADDR;          // Set return address
 
 
+    #ifdef DEBUG
     printf("Printing Data section\n");
     for(int i = 0; i < 31; i += 1){
         printf("Byte %d = %x or %c\n", i, (uint8_t)mem_read(0x2000 + i, 0x1, true), (char)mem_read(0x2000 + i, 0x1, true));
     }
+    #endif
 
 
     uint32_t cmds_done = 0;
@@ -937,11 +939,11 @@ void save_args(int argc, char **argv){
                 break;
             case 's':
                 simargs.mem_save_start_addr = strtoul(optarg, NULL, 0);
-                printf("Save memory start address: %s\n", optarg);
+                printf("Save memory start address: 0x%x\n", simargs.mem_save_start_addr);
                 break;
             case 'n':
                 simargs.mem_save_nwords = strtoul(optarg, NULL, 0);
-                printf("Saving n bytes of memory: %s\n", optarg);
+                printf("Saving n words of memory: 0x%x\n", simargs.mem_save_nwords);
                 break;
             default:
                 fprintf(stderr, "Unknown option.\n");
