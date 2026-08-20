@@ -1,13 +1,9 @@
 `timescale 1ns/1ps
 
 
-`define LOOP_ADDR 32'h128
-`define INSTR_BASE_ADDR 32'h0200
-`define INSTR_SIZE 32'h0200
-`define DATA_BASE_ADDR 32'h0500
-`define DATA_SIZE 32'h0200
+`include "risc_mem_cfg.svh"
 
-
+import main_seq_pkg::*;
 
 module tb_top;
 
@@ -19,6 +15,8 @@ module tb_top;
 
     logic run_req_i;
     logic done_state;
+
+    cpu_if cpu_sigs();
 
     // Instruction memory interface
     logic [31:0] instr_raddr_o;
@@ -66,8 +64,8 @@ module tb_top;
         .clk_i(clk_i),
         .resetn_i(resetn_i),
 
-        .iccm_raddr_i(instr_raddr_o),
-        .iccm_data_o(instr_data_i),
+        .instr_raddr_i(instr_raddr_o),
+        .instr_data_o(instr_data_i),
 
         .data_rd_addr_i(data_rd_addr_o),
         .data_rd_data_o(data_rd_data_i),
@@ -95,75 +93,18 @@ module tb_top;
         //run_req_i = 0;
     end
 
-    /*
-    // Instruction read
-    assign instr_data_i = main_mem[instr_raddr_o[11:2]]; 
-
-    // Data memory
-    assign data_rd_data_i = main_mem[data_rd_addr_o[11:2]];
-
-    always @(posedge clk_i) begin
-        if (data_wr_en_o) begin
-            main_mem[data_wr_addr_o[11:2]] <= data_wr_data_o;
-        end
-    end
-
-    wire [31:0] data_base_addr_int = `DATA_BASE_ADDR;
-    wire [31:0] fin_loop_addr_int = `LOOP_ADDR;
-    wire [13:0] branch_delta = {10'b1111111111, 4'b0100}; // -12 = (12 = 1100), -12 = ...110100
-
-    wire [31:0] program_entry = 32'h200;
-
-
-    initial begin
-        $readmemh("iccm.hex", iccm_mem, 0,  )
-    end
-
-    // Init mem
-    initial begin
-        integer i;
-        //$readmemh("instruction.hex", instr_mem);
-        //$readmemh("data.hex", data_mem);
-        for (i = 0; i < 1023; i++) begin    
-            main_mem[i] = 32'h00000013; // NOP (ADDI x0,x0,0)
-        end
-        
-        // sp = `DATA_BASE
-        main_mem[64] = {data_base_addr_int[31:20], 5'h0, 3'b0, 5'h2, 7'b0010011};  // addi sp, s0, addr_lsbs
-        main_mem[65] = {7'd0, 5'd12, 5'h2, 3'b001, 5'h2, 7'b0010011};             // sll sp, sp, 12
-        main_mem[66] = {data_base_addr_int[19:8], 5'h2, 3'b0, 5'h2, 7'b0010011}; // addi sp, sp, addr_sbs
-        main_mem[67] = {7'd0, 5'd8, 5'h2, 3'b001, 5'h2, 7'b0010011};             // sll sp, sp, 8
-        main_mem[68] = {4'd0, data_base_addr_int[7:0], 5'h2, 3'b0, 5'h2, 7'b0010011}; // addi sp, sp, addr_sbs
-        // ra = `LOOP_ADDR
-        main_mem[69] = {fin_loop_addr_int[31:20], 5'h0, 3'b0, 5'h1, 7'b0010011};         // addi ra, s0, addr_lsbs
-        main_mem[70] = {7'd0, 5'd12, 5'h1, 3'b001, 5'h1, 7'b0010011};                   // sll ra, ra, 12
-        main_mem[71] = {fin_loop_addr_int[19:8], 5'h1, 3'b0, 5'h1, 7'b0010011};        // addi ra, ra, addr_sbs
-        main_mem[72] = {7'd0, 5'd8, 5'h1, 3'b001, 5'h1, 7'b0010011};                   // sll ra, ra, 8
-        main_mem[73] = {4'd0, fin_loop_addr_int[7:0], 5'h1, 3'b0, 5'h1, 7'b0010011};  // addi ra, ra, addr_sbs
-        
-        // Loop
-        main_mem[74] = 32'h00000013;    // NOPs
-        main_mem[75] = 32'h00000013;
-        main_mem[76] = 32'h00000013;
-        main_mem[77] = {branch_delta[12], branch_delta[10:5], 5'h0, 5'h0, 3'b0, branch_delta[4:1], branch_delta[11], 7'b1100011};
-
-
-        // Start program at main_mem[128]
-
-        // Last instrc is main_mem[255]
-    end*/
-
+    main_seq seq;
 
     initial begin
         //wait(done_state);
         fork
             begin
-                wait(instr_raddr_o == 32'h120);
+                wait(instr_raddr_o == `PROGRAM_DONE_ADDRESS);
                 $display("PC Reached end loop.");
             end
             begin
-                #10us;
-                $display("Program timed out after 10us");
+                #50us;
+                $display("Program timed out after 50us");
             end
         join_any
 
