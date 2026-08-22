@@ -7,7 +7,7 @@
 `define OP_OR  6
 `define OP_AND 7
 `define OP_SUB 8
-`define OP_SRA 9
+`define OP_SRA 13
 `define OP_EQL 10
 
 `define OP_OUTV2 'd15
@@ -24,6 +24,7 @@ module alu(
     always @(*) begin
         case(operation)
             `OP_ADD : vout = val1 + val2;
+            `OP_OR  : vout = val1 | val2;
             `OP_SUB : vout = val1 - val2;
             `OP_XOR : vout = val1 ^ val2;
             `OP_AND : vout = val1 & val2;

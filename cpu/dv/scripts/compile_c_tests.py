@@ -15,31 +15,64 @@ def get_files(dir_path, expr):
     return ans
 
 
+def risc_load_addr(int32_addr, reg):
+    # LUI
+    addr_msb = int32_addr >> 12
+    lui_cmd = (addr_msb << 12 ) + (reg << 7) + (0b0110111)
+    addr_lsb = int32_addr & 0xFFF
+    add_cmd = (addr_lsb << 20) + (reg << 15) + (reg << 7) + (0b0010011)
+
+    ans = f"{lui_cmd:08x}\n"
+    ans += f"{add_cmd:08x}\n"
+    return ans
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Compile all C tests into RISC binarys and generate program traces/expected output.')
+    parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
 
     # Check root is set
     ROOT = os.environ.get('ROOT')
     assert ROOT, "ERROR: ROOT varaiable must be set"
 
+
     # Setup search paths
     c_tests_dir = ROOT + "/cpu/dv/c_tests/"
+    c_tests_src = c_tests_dir + "/src/"
     risc_emulator = ROOT + "/cpu/dv/risc_emulator/build/emulator"
     result = ""
 
 
     # 1) Compile + run all tests in c_tests directory
-    tests = get_files(c_tests_dir, "^test_(\w+).c$")
-    main_file = c_tests_dir + "/main.c"
+    tests = get_files(c_tests_src, "^test_(\w+).c$")
+    main_file = c_tests_src + "/main.c"
 
     build_dir = f"{c_tests_dir}/build"
     if(os.path.exists(build_dir)):
         print(f"Deleting directory {build_dir}")
         shutil.rmtree(build_dir)
     os.mkdir(build_dir)
+
+
+  
+    pc_rtl_start_addr = 0x100
+    program_done_addr = 0x200
+    program_start_addr = 0x10_000
+    data_start_addr = 0x30_000
+    data_size_words = 20
+    stack_start_addr = 0x60_000
+    max_stack_size = 0x10_000
+
+    print(f"Compiling all C tests:")
+    print(f"    Using RTL PC Start address = {hex(pc_rtl_start_addr)}")
+    print(f"    Using Program PC Start address (.text start) = {hex(program_start_addr)}")
+    print(f"    Static data array location (.data start) = {hex(data_start_addr)}")
+    print(f"    Static data array size (words) = {data_size_words}")
+    print(f"    Stack start address = {hex(stack_start_addr)}")
+    print(f"    Max usable stack size (bytes) = {max_stack_size}")
+
 
     for cfile in tests:
 
@@ -49,49 +82,44 @@ if __name__ == "__main__":
         print(f"Compiling test {cfile}")
 
 
-        # execute compile Command x86
-        #result = subprocess.run(
-        #    f"gcc {cfile} {main_file} -o build/{testname}/{testname}_x86.exe -D COMPILE_X86",
-        #    shell=True, text=True
-        #)
-        #assert result.returncode == 0, f"ERROR: failed to compile test: {filename}"
-
-
         testoutdir = f"{build_dir}/{testname}"
         os.mkdir(testoutdir)
         commands = [
-            f"gcc {cfile} {main_file} -o {testoutdir}/{testname}_x86.exe -D COMPILE_X86",
-            f"clang --target=riscv32 -march=rv32i -mabi=ilp32 {main_file} -S -o {testoutdir}/{testname}_main_risc.asm",
-            f"clang --target=riscv32 -march=rv32i -mabi=ilp32 {cfile} -S -o {testoutdir}/{testname}_test_risc.asm",
+            f"gcc {cfile} {main_file} -o {testoutdir}/{testname}_x86.exe -D COMPILE_X86 -D TEST_SIZE_W={data_size_words}",
+            f"clang --target=riscv32 -march=rv32i -mabi=ilp32 {main_file} -S -o {testoutdir}/{testname}_main_risc.asm -D TEST_SIZE_W={data_size_words}",
+            f"clang --target=riscv32 -march=rv32i -mabi=ilp32 {cfile} -S -o {testoutdir}/{testname}_test_risc.asm -D TEST_SIZE_W={data_size_words}",
             f"clang --target=riscv32 -march=rv32g -mabi=ilp32 -mno-relax {testoutdir}/{testname}_main_risc.asm -c -o {testoutdir}/{testname}_main_risc.obj",
             f"clang --target=riscv32 -march=rv32g -mabi=ilp32 -mno-relax {testoutdir}/{testname}_test_risc.asm -c -o {testoutdir}/{testname}_test_risc.obj",
-            f"ld.lld {testoutdir}/{testname}_main_risc.obj {testoutdir}/{testname}_test_risc.obj -o {testoutdir}/{testname}_risc.elf -static --section-start=.text=1000 --section-start=.data=2000",
-            f"llvm-objcopy-14 --output-target=ihex {testoutdir}/{testname}_risc.elf {testoutdir}/{testname}_risc.ihex --set-start=1000",
-            f"llvm-objcopy-14 --output-target=binary {testoutdir}/{testname}_risc.elf {testoutdir}/{testname}_risc.bin --set-start=1000"
+            f"ld.lld {testoutdir}/{testname}_main_risc.obj {testoutdir}/{testname}_test_risc.obj -o {testoutdir}/{testname}_risc.elf -static --section-start=.text={hex(program_start_addr)} --section-start=.data={hex(data_start_addr)}",
+            f"llvm-objcopy-14 --output-target=ihex {testoutdir}/{testname}_risc.elf {testoutdir}/{testname}_risc.ihex --set-start={hex(program_start_addr)}",
+            f"llvm-objcopy-14 --output-target=binary {testoutdir}/{testname}_risc.elf {testoutdir}/{testname}_risc_text.bin --set-start={hex(program_start_addr)} --only-section=.text",
+            f"llvm-objcopy-14 --output-target=binary {testoutdir}/{testname}_risc.elf {testoutdir}/{testname}_risc_data.bin --set-start={hex(program_start_addr)} --only-section=.data --only-section=.rodata"
         ]
 
+        # compile all binaries
         for c in commands:
-            print("Running: ", c)
+            if(args.verbose):
+                print("Running: ", c)
             result = subprocess.run(c,shell=True, text=True)
             # assert result.returncode == 0, f"ERROR: failed to compile test: {filename}"
             assert subprocess.run(c,shell=True, text=True).returncode == 0, f"ERROR: failed to compile test: {testname}"
         
         # Run x86 exe
-        print("Running: ", f"{testoutdir}/{testname}_x86.exe")
+        if(args.verbose):
+            print("Running: ", f"{testoutdir}/{testname}_x86.exe")
         result = subprocess.run(f"{testoutdir}/{testname}_x86.exe",shell=True, text=True, capture_output=True)
         with open(f"{testoutdir}/{testname}_x86.out", "w") as f:
             f.write(result.stdout)
 
 
         # Run with emulator
-        pc_start_addr = "0x1000"
-        data_start_addr = "0x2000"
-        data_size_words = "1024"
-        emulator_cmd = f"{risc_emulator} {testoutdir}/{testname}_risc.ihex {pc_start_addr} -o {testoutdir}/{testname}_emulator.out -s {data_start_addr} -n {data_size_words}"
+        emulator_cmd = f"{risc_emulator} {testoutdir}/{testname}_risc.ihex {hex(program_start_addr)} -o {testoutdir}/{testname}_emulator.out -s {data_start_addr} -n {data_size_words}"
 
         # Run emulator
-        print("Running: ", emulator_cmd)
+        if(args.verbose):
+            print("Running: ", emulator_cmd)
         result = subprocess.run(emulator_cmd, shell=True, capture_output=True)
+        assert result.returncode == 0, f"ERROR: emulator crashed for test {testname}, {emulator_cmd}" 
 
         # Diff emulator vs x86
         diffcmd = f"diff {testoutdir}/{testname}_emulator.out {testoutdir}/{testname}_x86.out"
@@ -99,109 +127,30 @@ if __name__ == "__main__":
         if(result.stdout != ""):
             print(f"ERROR: Emulator output does not match native x86 output for {cfile}")
 
+        # Save .hex files for iccm/dccm
+        result = subprocess.run(f'''hexdump -e '1/4 "%08x" "\n"' {testoutdir}/{testname}_risc_text.bin -v''', shell=True, capture_output=True, text=True)
+        with open(f"{testoutdir}/{testname}_iccm.hex", "w") as f:
+            f.write(result.stdout)
+
+        result = subprocess.run(f'''hexdump -e '1/4 "%08x" "\n"' {testoutdir}/{testname}_risc_data.bin -v''', shell=True, capture_output=True, text=True)
+        with open(f"{testoutdir}/{testname}_dccm.hex", "w") as f:
+            f.write(result.stdout)
+
+    # Make ROM entry point.
+    rom_hex = f"\n"
+    rom_hex += f"@{hex((pc_rtl_start_addr>>2))[2:]}  \n" # @ <adddr>, addr hex value without 0x prefix
+    rom_hex += risc_load_addr(stack_start_addr, 0x2) # Set stack address
+    rom_hex += risc_load_addr(program_start_addr, 0x1) # Set call address
+    rom_hex += "000080e7\n" # Call/JALR - JALR ra, ra, 0
+    rom_hex += "00000013\n"
+    rom_hex += "00000013\n"
+    rom_hex += "00000013\n"
+    rom_hex += "00000013\n"
+    rom_hex += "fe000ae3\n" # BEQ R0, R0, -12 -> Loops forever
+    with open(f"{build_dir}/rom.hex", "w") as f:
+        f.write(rom_hex)
+
+
 
     exit(1)
 
-
-
-    #
-    # Make output directory 
-    #
-    if(args.out_dir and os.path.exists(args.out_dir) and os.path.isdir(args.out_dir)): 
-        os.chdir(args.out_dir)
-
-    now = datetime.now()
-    outdir = "Regout" + now.strftime("%Y_%b_%d_%H%M%S")
-    os.mkdir(outdir)
-    print(f"Making output directory: {outdir}"); 
-    os.chdir(outdir)
-    output_dir = os.getcwd()
-    os.mkdir("build")
-    os.chdir("build")
-
-    result = subprocess.run(
-            f"cp {tb_dir}/iccm.hex ./",
-            shell=True,
-            #capture_output=True,
-            text=True
-        )
-    result = subprocess.run(
-            f"cp {tb_dir}/rom.hex ./",
-            shell=True,
-            #capture_output=True,
-            text=True
-        )
-
-    
-    
-    # Make compile command
-    compile_command = f"{vivado_dir}/xvlog -work {worklib_name} --sv " 
-    compile_command = compile_command + f" --log {output_dir}/build/compile.log "
-
-    for f in get_files(rtl_dir, ".*\.v"):
-        compile_command += f + " " 
-    
-    for f in get_files(tb_dir, ".*\.sv"):
-        compile_command += f + " " 
-
-    compile_command += f" --include {tb_dir} "
-
-    # execute compile Command
-    result = subprocess.run(
-        compile_command,
-        shell=True,
-        #capture_output=True,
-        text=True
-    )
-    print(result)
-    print(f"Using xvlog to compile the design: {result}")
-    assert result.returncode == 0, f"ERROR: xvlog compilation failed. Please check {output_dir}/build/compile.log"
-    if(args.compile_only):
-        print("Compile finished succesfully, exiting now.")
-        exit(0)
-
-    # Make xelab command
-    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale '1ns/1ps' -debug typical" 
-    elab_command = elab_command + f" --log {output_dir}/build/elaborate.log "
-    # print(elab_command)
-    # execute elab Command
-    result = subprocess.run(
-        elab_command,
-        shell=True,
-        #capture_output=True,
-        text=True
-    )
-    print(result)
-    assert result.returncode == 0, f"ERROR: velab elaboration failed. Please check {output_dir}/build/elaborate.log"
-
-
-
-    # Make files to be able to open the waves easily
-    with open(f"{output_dir}/build/open_waves.tcl", 'w') as f:
-        s = f"open_wave_database {output_dir}/test1.wdb\n"
-        f.write(s)
-
-    with open(f"{output_dir}/build/open_waves.sh", 'w') as f:
-        s = f"{vivado_dir}/xsim {worklib_name}.{top_module} --xsimdir {output_dir}/build -gui --t {output_dir}/build/open_waves.tcl\n"
-        f.write(s)
-    os.chmod(f"{output_dir}/build/open_waves.sh", 0o777)   # rwxrwxrwx
-
-    # Run the sim.
-    #os.mkdir(f"{output_dir}/test1")
-    print(f"{output_dir}/test1")
-    #os.chdir(f"{output_dir}/test1") -> This breaks it...
-    # add --log <filename> for output log
-    # add --t <filename.tcl> for tcl script
-    sim_command = f"{vivado_dir}/xsim {worklib_name}.{top_module} --xsimdir {output_dir}/build --wdb {output_dir}/test1"
-    sim_command = sim_command + f" --wdb {output_dir}/test1 "
-    sim_command = sim_command + f" --log {output_dir}/build/simulate.log "
-    sim_command = sim_command + f" --t {scripts_dir}/xsim_run.tcl "
-    # Still need to log all waves, specify wave output file, run for some time --wdb {output_dir}/test1 
-    print(sim_command)
-    
-    result = subprocess.run(
-        sim_command,
-        shell=True,
-        #capture_output=True,
-        text=True
-    )

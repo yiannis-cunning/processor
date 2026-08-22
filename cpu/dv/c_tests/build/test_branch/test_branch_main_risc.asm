@@ -26,8 +26,8 @@ _start:
 g_inp_data:
 	.word	4096
 	.word	8192
-	.zero	4088
-	.size	g_inp_data, 4096
+	.zero	72
+	.size	g_inp_data, 80
 
 	.ident	"Debian clang version 14.0.6"
 	.section	".note.GNU-stack","",@progbits

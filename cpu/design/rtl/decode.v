@@ -78,7 +78,7 @@ module decode(
         case (instr_reg_i[6:0])
             `OPCODE_INT_I   : lut_rd[3:0] = (instr_reg_i[14:12] == 3'b101) ? ( {instr_reg_i[30], instr_reg_i[14:12]} ) : ( {1'b0, instr_reg_i[14:12]} );
             `OPCODE_INT_R   : lut_rd[3:0] = {instr_reg_i[30], instr_reg_i[14:12]};
-            `OPCODE_BRANCH  : lut_rd[3:0] = (instr_reg_i[14:12] == 2'b00) ? (4'd10) : ( {2'b0, instr_reg_i[14:13]} );
+            `OPCODE_BRANCH  : lut_rd[3:0] = (instr_reg_i[14:13] == 2'b00) ? (4'd10) : ( {2'b0, instr_reg_i[14:13]} );
             `OPCODE_JALR    : lut_rd[3:0] = 4'd0;  //`OP_ADD;
             `OPCODE_LUI     : lut_rd[3:0] = 4'd15; //`OP_OUTV2;
             default         : lut_rd[3:0] = 4'd0;

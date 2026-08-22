@@ -16,7 +16,7 @@ test_main:
 	j	.LBB0_1
 .LBB0_1:
 	lw	a1, -16(s0)
-	li	a0, 1023
+	li	a0, 19
 	blt	a0, a1, .LBB0_4
 	j	.LBB0_2
 .LBB0_2:
@@ -54,9 +54,9 @@ test_main:
 	sw	a0, -36(s0)
 	lw	a0, -12(s0)
 	sw	a0, -40(s0)
-	lui	a0, 1
+	li	a0, 80
 	sw	a0, -44(s0)
-	addi	a0, a0, -2048
+	li	a0, 40
 	sw	a0, -48(s0)
 	li	a0, 0
 	sw	a0, -52(s0)
@@ -177,7 +177,7 @@ test_main:
 	j	.LBB0_21
 .LBB0_21:
 	lw	a1, -84(s0)
-	li	a0, 1023
+	li	a0, 19
 	blt	a0, a1, .LBB0_24
 	j	.LBB0_22
 .LBB0_22:

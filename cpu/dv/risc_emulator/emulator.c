@@ -15,7 +15,7 @@ extern char * optarg;
 
 //  ****      Defines/Macros      **** //
 
-#define ISHEXDIG(x) ( (( (x) >= '0') && ( (x) <= '9')) || (( (x) >= 'a') && ( (x) <= 'f')) || (( (x) >= 'A') && ( (x) <= 'f')) )
+#define ISHEXDIG(x) ( (( (x) >= '0') && ( (x) <= '9')) || (( (x) >= 'a') && ( (x) <= 'f')) || (( (x) >= 'A') && ( (x) <= 'F')) )
 #define ISOUTSIDE(x, low, high)  ( ( (x) <  (low) ) || ( (x) >  (high) ) )
 #define ISINSIDE(x, low, high)   ( ( (x) >= (low) ) && ( (x) <= (high) ) )
 
@@ -23,13 +23,13 @@ extern char * optarg;
 
 //#define PASSERT_DEF(cond, ) if(! cond ) {printf(); exit(1);}
 
-#define MAX_ICCM_DCCM_SIZE_B 0x10000
+#define MAX_ICCM_DCCM_SIZE_B 0x100000
 // Stack should be word aligned ...
-#define STACK_START_ADDR    0x100000
-#define MAX_STACK_SIZE      0x10000
-#define PC_QUIT_ADDR        0x10000
+#define STACK_START_ADDR    0x1000000
+#define MAX_STACK_SIZE      0x100000
+#define PC_QUIT_ADDR        0x100
 
-//#define DEBUG
+#define DEBUG
 #define PRINT_ALL_MEM
 
 
@@ -102,6 +102,7 @@ void *safe_calloc(size_t nmemb, size_t size ){
 
 uint32_t get_bits(uint32_t num, uint32_t msb, uint32_t lsb){
     passert( (msb >= lsb) && (msb <= 31), "Bad get_bits call made");
+    if( (msb == 31) & (lsb == 0)){return num;}
 
     uint32_t num_bits = (msb - lsb) + 1;
     uint32_t mask = (1 << num_bits) - 1;
@@ -112,6 +113,7 @@ uint32_t get_bits(uint32_t num, uint32_t msb, uint32_t lsb){
 
 uint32_t sign_extend(uint32_t num, uint32_t numbits){
     passert( (numbits > 0) & (numbits <= 32), "Bad call to sign extend");
+    if(numbits == 32){return num;}
 
     uint32_t msb = numbits - 1;
     passert( (num >> (msb + 1) ) == 0, "Bad sign extended value");
@@ -190,18 +192,17 @@ uint32_t mem_read(uint32_t raddr, uint8_t strb_en, bool load_unsigned){
 
 
     // 3) Read byte from mem.
-    rdata = load_unsigned ? (0) : (0xFFFFFFFF);
+    rdata = 0;
     for(int i = nbytes - 1; i >= 0; i -= 1){   // Little endian
         rdata = (rdata << 8);
         
-        if(!ISINSIDE(raddr + i - seg->addr_base, 0, seg->alloc_size - 1))
-        {
-            printf("nbytes = ");
-            printf("acess to %d not within array bounds of %d, i = %d ",raddr + i - seg->addr_base, 0, i);
-        }
 
         passert( ISINSIDE(raddr + i - seg->addr_base, 0, seg->alloc_size - 1), "Out of bounds access for memory read");
         rdata += (uint32_t) seg->mem[raddr + i - seg->addr_base];
+    }
+
+    if(!load_unsigned){
+        rdata = sign_extend(rdata, nbytes*8);
     }
 
     #ifdef PRINT_ALL_MEM
@@ -302,6 +303,7 @@ uint32_t atoi_nhex(char * buf, uint32_t nchars){
 typedef enum {
     eDATA_RECORD = 0,
     eEOF_RECORD = 1,
+    eEXT_SEG_ADDR_RECORD = 2,
     eSTART_SEG_ADDR_RECORD = 3
 } e_ihex_record_type;
 
@@ -393,6 +395,9 @@ void get_next_record(int fd, ihex_entry_t *record, int *linenum){
         case eDATA_RECORD: // Data record
             // No conditions ...
             break;
+        case eEXT_SEG_ADDR_RECORD:
+            passert(record->num_bytes == 2, "Bad Extended linear address record.");
+            break;
         case eEOF_RECORD: // EOF record
             // All other entries should be 0
             passert( (record->num_bytes == 0) && (record->addr == 0), "Bad EOF record in ihex file on line");
@@ -436,6 +441,10 @@ mem_segment_t * load_from_ihex(char *ihex_file){
     uint32_t max_used_addr = 0x0;
     uint32_t min_used_addr = 0xFFFFFFFF;
 
+    uint32_t curr_addr_extension = 0x0;
+    uint32_t addr_real = 0x0;
+    uint32_t addr_real_end = 0x0;
+
     while(! end_of_file)
     {
         get_next_record(fd, &record, &linenum);
@@ -443,8 +452,14 @@ mem_segment_t * load_from_ihex(char *ihex_file){
         switch(record.rec_type)
         {
             case eDATA_RECORD: // Data record
-                min_used_addr = (record.addr < min_used_addr) ? (record.addr) : (min_used_addr);
-                max_used_addr = (record.addr_end > max_used_addr) ? (record.addr_end) : (max_used_addr);
+                addr_real = record.addr + curr_addr_extension;
+                addr_real_end = record.addr_end + curr_addr_extension;
+                min_used_addr = (addr_real < min_used_addr) ? (addr_real) : (min_used_addr);
+                max_used_addr = (addr_real_end > max_used_addr) ? (addr_real_end) : (max_used_addr);
+                break;
+            case eEXT_SEG_ADDR_RECORD:
+                curr_addr_extension = ((record.data[0] << 8) + record.data[1]) << 4;
+                printf("Found ext linear address record %x\n", curr_addr_extension);
                 break;
             case eEOF_RECORD: // EOF record
                 end_of_file = true;
@@ -480,6 +495,7 @@ mem_segment_t * load_from_ihex(char *ihex_file){
     passert( lseek(fd, 0, SEEK_SET) == 0, "Could not seek back to begining of ihex file");
     end_of_file = false;
     linenum = 0;
+    curr_addr_extension = 0x0;
     
     while(!end_of_file)
     {
@@ -488,13 +504,17 @@ mem_segment_t * load_from_ihex(char *ihex_file){
         switch(record.rec_type)
         {
             case eDATA_RECORD: // Data record
+                addr_real = curr_addr_extension + record.addr;
                 // Copy in data to allocation
-                passert(    ISINSIDE(   (uint64_t) (iccm_dccm_seg->mem + record.addr - iccm_dccm_seg->addr_base),\
+                passert(    ISINSIDE(   (uint64_t) (iccm_dccm_seg->mem + addr_real - iccm_dccm_seg->addr_base),\
                                         (uint64_t) iccm_dccm_seg->mem, \
                                         (uint64_t) (iccm_dccm_seg->mem + iccm_dccm_size - 1)), \
                  "Writing outside of segment allocation");
                 
-                memcpy(iccm_dccm_seg->mem + record.addr - iccm_dccm_seg->addr_base, record.data, record.num_bytes);
+                memcpy(iccm_dccm_seg->mem + addr_real - iccm_dccm_seg->addr_base, record.data, record.num_bytes);
+                break;
+            case eEXT_SEG_ADDR_RECORD:
+                curr_addr_extension = ((record.data[0] << 8) + record.data[1]) << 4;
                 break;
             case eSTART_SEG_ADDR_RECORD: // EOF record
                 passert(record.num_bytes == 4, "PC start record does not have 4 bytes");
@@ -793,11 +813,11 @@ void process_cmd(uint32_t instr_r){
                     break;
                 case 0b110: // OR
                     alu_res = rs1_val | rs2_val;
-                    passert(func7 == 0b0, "Bad XOR instruction");
+                    passert(func7 == 0b0, "Bad OR instruction");
                     break;
                 case 0b111: // AND
                     alu_res = rs1_val & rs2_val;
-                    passert(func7 == 0b0, "Bad XOR instruction");
+                    passert(func7 == 0b0, "Bad AND instruction");
                     break;
                 default:
                     passert(false, "Bade ALU code");
@@ -873,18 +893,10 @@ void simulate(char *memory_image, uint32_t pc_start){
     // Memory core struct = memory;
 
     uint32_t program_end_addr = PC_QUIT_ADDR;
-    uint32_t max_cmds = 100000;
+    uint32_t max_cmds = 1000000;
     cpu.pc = pc_start;
     cpu.reg[2] = STACK_START_ADDR;      // Set stack address
     cpu.reg[1] = PC_QUIT_ADDR;          // Set return address
-
-
-    #ifdef DEBUG
-    printf("Printing Data section\n");
-    for(int i = 0; i < 31; i += 1){
-        printf("Byte %d = %x or %c\n", i, (uint8_t)mem_read(0x2000 + i, 0x1, true), (char)mem_read(0x2000 + i, 0x1, true));
-    }
-    #endif
 
 
     uint32_t cmds_done = 0;
@@ -902,14 +914,10 @@ void simulate(char *memory_image, uint32_t pc_start){
         printf("Program reached target end address of 0x%x\n", program_end_addr );
     } else if(cmds_done == max_cmds){
         printf("Quitting program after reaching maximum commands %d\n", max_cmds);
+        exit(1);
     }
 
-    // Print memory location of arr
 
-    printf("Printing Data section\n");
-    for(int i = 0; i < 31; i += 1){
-        printf("Byte %d = %x or %c\n", i, (uint8_t)mem_read(0x2000 + i, 0x1, true), (char)mem_read(0x2000 + i, 0x1, true));
-    }
 
     // Save memory sub-section to memory
     if(simargs.save_mem_to_file){

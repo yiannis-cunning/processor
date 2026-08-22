@@ -1,5 +1,7 @@
 
 
+main:
+	echo "Build flow has moved to cpu/dv/scripts/compile_c_tests.py"
 
 
 def:
@@ -25,3 +27,4 @@ def:
 	# ELF ----> BIN/IHEX
 	llvm-objcopy-14 --output-target=ihex build/test1/test1_risc.elf build/test1/test1_risc.ihex --set-start=1000
 	llvm-objcopy-14 --output-target=binary build/test1/test1_risc.elf build/test1/test1_risc.bin --set-start=1000
+
