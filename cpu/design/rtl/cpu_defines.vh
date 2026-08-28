@@ -32,3 +32,5 @@
 
 `define OPCODE_EBREAK   7'b1110011
 `define OPCODE_ECALL    7'b1110011
+
+`define INSTR_NOP       32'h00000013

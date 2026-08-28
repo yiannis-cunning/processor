@@ -14,6 +14,7 @@ module tb_top;
     // Instruction memory interface
     logic [31:0] instr_raddr_o;
     logic [31:0] instr_data_i;
+    logic       instr_rd_en_o;
 
     // Data memory interface
     logic [31:0] data_rd_addr_o;
@@ -39,6 +40,7 @@ module tb_top;
 
         .instr_raddr_o(instr_raddr_o),
         .instr_data_i(instr_data_i),
+        .instr_rd_en_o(instr_rd_en_o),
 
         .data_rd_addr_o(data_rd_addr_o),
         .data_rd_data_i(data_rd_data_i),
@@ -57,6 +59,7 @@ module tb_top;
 
         .instr_raddr_i(instr_raddr_o),
         .instr_data_o(instr_data_i),
+        .instr_rd_en_i(instr_rd_en_o),
 
         .data_rd_addr_i(data_rd_addr_o),
         .data_rd_data_o(data_rd_data_i),

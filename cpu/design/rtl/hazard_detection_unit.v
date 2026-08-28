@@ -15,6 +15,9 @@ module hazard_detection_unit(
     input wire [4:0]    execute_memory_rd_addr_i,
     input wire          execute_memory_writeback_en,
 
+    input wire [4:0]    memory1_memory2_rd_addr_i,
+    input wire          memory1_memory2_writeback_en,
+
     // To Fetch
     output wire hdu_dected_o
 
@@ -22,13 +25,16 @@ module hazard_detection_unit(
 
     wire [4:0] execute_rd_addr = decode_execute_writeback_en ? (decode_execute_rd_addr_i) : (5'd0);
     wire [4:0] memory_rd_addr = execute_memory_writeback_en ? (execute_memory_rd_addr_i) : (5'd0);
+    wire [4:0] memory2_rd_addr = memory1_memory2_writeback_en ? (memory1_memory2_rd_addr_i) : (5'd0);
 
 
     assign hdu_dected_o =
         ( (decode_rs1_addr_used == execute_rd_addr) & (execute_rd_addr != 5'd0) ) ||
         ( (decode_rs2_addr_used == execute_rd_addr) & (execute_rd_addr != 5'd0) ) ||
         ( (decode_rs1_addr_used == memory_rd_addr) & (memory_rd_addr != 5'd0) ) ||
-        ( (decode_rs2_addr_used == memory_rd_addr) & (memory_rd_addr != 5'd0) );
+        ( (decode_rs2_addr_used == memory_rd_addr) & (memory_rd_addr != 5'd0) ) ||
+        ( (decode_rs1_addr_used == memory2_rd_addr) & (memory2_rd_addr != 5'd0) ) ||
+        ( (decode_rs2_addr_used == memory2_rd_addr) & (memory2_rd_addr != 5'd0) ) ;
 
 
 endmodule

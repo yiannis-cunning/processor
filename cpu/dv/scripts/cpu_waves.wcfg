@@ -3,46 +3,29 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="/home/cunningy/Desktop/gits/processor/regout/Regout2026_Jun_27_132656/test1.wdb" id="1">
+      <db_ref path="/home/cunningy/Desktop/gits/processor/regout/Regout2026_Aug_25_212024/test1/test1.wdb" id="1">
          <top_modules>
+            <top_module name="main_seq_pkg" />
             <top_module name="tb_top" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="328.035 ns"></ZoomStartTime>
-      <ZoomEndTime time="476.236 ns"></ZoomEndTime>
-      <Cursor1Time time="365.000 ns"></Cursor1Time>
+      <ZoomStartTime time="142.600 ns"></ZoomStartTime>
+      <ZoomEndTime time="247.401 ns"></ZoomEndTime>
+      <Cursor1Time time="175.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="208"></NameColumnWidth>
-      <ValueColumnWidth column_width="131"></ValueColumnWidth>
+      <ValueColumnWidth column_width="127"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="12" />
+   <WVObjectSize size="8" />
    <wave_markers>
-      <marker label="" time="356333" />
+      <marker label="" time="165000" />
    </wave_markers>
    <wvobject type="logic" fp_name="/tb_top/dut/I_memory/clk_i">
       <obj_property name="ElementShortName">clk_i</obj_property>
       <obj_property name="ObjectShortName">clk_i</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb_top/dut/I_decode/I_rf/registers[10]">
-      <obj_property name="ElementShortName">[10][31:0]</obj_property>
-      <obj_property name="ObjectShortName">[10][31:0]</obj_property>
-      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb_top/dut/I_memory/wr_en_o">
-      <obj_property name="ElementShortName">wr_en_o</obj_property>
-      <obj_property name="ObjectShortName">wr_en_o</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb_top/dut/I_memory/wr_addr_o">
-      <obj_property name="ElementShortName">wr_addr_o[31:0]</obj_property>
-      <obj_property name="ObjectShortName">wr_addr_o[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb_top/dut/I_memory/wr_data_o">
-      <obj_property name="ElementShortName">wr_data_o[31:0]</obj_property>
-      <obj_property name="ObjectShortName">wr_data_o[31:0]</obj_property>
-      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="group" fp_name="group7">
       <obj_property name="label">Fetch</obj_property>
@@ -59,17 +42,17 @@
          <obj_property name="AnalogHorizLine">0.000000</obj_property>
          <obj_property name="WaveformStyle">STYLE_DIGITAL</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/tb_top/dut/I_fetch/instr_raddr_o">
-         <obj_property name="ElementShortName">instr_raddr_o[31:0]</obj_property>
-         <obj_property name="ObjectShortName">instr_raddr_o[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/tb_top/dut/I_fetch/instr_rdata_i">
-         <obj_property name="ElementShortName">instr_rdata_i[31:0]</obj_property>
-         <obj_property name="ObjectShortName">instr_rdata_i[31:0]</obj_property>
-      </wvobject>
       <wvobject type="array" fp_name="/tb_top/dut/I_fetch/instr_reg_o">
          <obj_property name="ElementShortName">instr_reg_o[31:0]</obj_property>
          <obj_property name="ObjectShortName">instr_reg_o[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tb_top/dut/I_fetch/instr_valid_r">
+         <obj_property name="ElementShortName">instr_valid_r</obj_property>
+         <obj_property name="ObjectShortName">instr_valid_r</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tb_top/dut/I_fetch/stall_enable_i">
+         <obj_property name="ElementShortName">stall_enable_i</obj_property>
+         <obj_property name="ObjectShortName">stall_enable_i</obj_property>
       </wvobject>
    </wvobject>
    <wvobject type="group" fp_name="group8">

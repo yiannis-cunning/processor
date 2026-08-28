@@ -11,8 +11,9 @@ module pipeline_top(
     //output wire [7:0] gpo,
 
     // Instruction mem RO interface
-    output wire [31:0] instr_raddr_o,
-    input wire  [31:0] instr_data_i,
+    output wire [31:0]      instr_raddr_o,
+    input wire  [31:0]      instr_data_i,
+    output wire             instr_rd_en_o,
 
 
     // Data mem R/W Interface
@@ -57,6 +58,10 @@ module pipeline_top(
     wire [4:0]  execute_memory_rd_addr_int;
     wire [31:0] execute_memory_pc_p4_int;
 
+    // Memory1 -> Memory2 interface
+    wire [4:0]  memory1_memory2_rd_addr_int;
+    wire [14:0] memory1_memory2_control_bits_int;
+
     wire        execute_branch_enable_int;
     wire [31:0] execute_decode_pc_dest_int;
 
@@ -75,6 +80,7 @@ module pipeline_top(
 
         .instr_raddr_o(instr_raddr_o),
         .instr_rdata_i(instr_data_i),
+        .instr_rd_en_o(instr_rd_en_o),
         
         // To Decode
         .instr_reg_o(fetch_decode_instr_int),
@@ -164,6 +170,9 @@ module pipeline_top(
         .rd_addr_reg_i(execute_memory_rd_addr_int),
         .pc_p4_reg_i(execute_memory_pc_p4_int),
 
+        .mem1_rd_addr_reg_o(memory1_memory2_rd_addr_int),
+        .mem1_control_bits_reg_o(memory1_memory2_control_bits_int),
+
         // To Writeback
         .rd_val_reg_o(memory_writeback_rd_val_int),
         .rd_addr_reg_o(memory_writeback_rd_addr_int),
@@ -186,6 +195,11 @@ module pipeline_top(
         // From Memory
         .execute_memory_rd_addr_i(execute_memory_rd_addr_int),
         .execute_memory_writeback_en(execute_memory_control_bits_int[`WRITE_BACK_EN_BITS]),
+
+        // From Memory 2
+        .memory1_memory2_rd_addr_i(memory1_memory2_rd_addr_int),
+        .memory1_memory2_writeback_en(memory1_memory2_control_bits_int[`WRITE_BACK_EN_BITS]),
+
 
         // To Fetch/Decode
         .hdu_dected_o(hazard_detected_int)

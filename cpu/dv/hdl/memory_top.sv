@@ -30,6 +30,7 @@ module memory_top(
     // INSTR I/F
     input wire [31:0]       instr_raddr_i,
     output logic  [31:0]    instr_data_o,
+    input wire              instr_rd_en_i,
 
     // DATA I/F
     input  wire [31:0]  data_rd_addr_i,
@@ -64,7 +65,7 @@ module memory_top(
 
         .raddr_i(iccm_raddr_int),
         .rdata_o(iccm_rdata_int),
-        .rd_en_i(1'b1),
+        .rd_en_i(instr_rd_en_i),
         
         .waddr_i('b0),
         .wdata_i(32'b0),
@@ -83,7 +84,7 @@ module memory_top(
 
         .raddr_i(rom_raddr_int),
         .rdata_o(rom_rdata_int),
-        .rd_en_i(1'b1),
+        .rd_en_i(instr_rd_en_i),
         
         .waddr_i('b0),
         .wdata_i(32'b0),
@@ -91,19 +92,27 @@ module memory_top(
         .strb_en_i(4'hF)
     );
 
+    logic iccm_sel_en;
+    reg iccm_sel_en_d1r;
+
     // Mux instruction port with rom/iccm
     // instr_data_o / instr_raddr_i
     always @(*) begin
         if( (instr_raddr_i[31:0] >= `ROM_START_ADDR) && ((instr_raddr_i[31:0] - `ROM_START_ADDR) < `ROM_SIZE) ) begin
-            instr_data_o = rom_rdata_int;
+            //instr_data_o = rom_rdata_int;
+            iccm_sel_en = 1'b0;
         end else if( (instr_raddr_i[31:0] >= `ICCM_START_ADDR) && ((instr_raddr_i[31:0] - `ICCM_START_ADDR) < `ICCM_SIZE) ) begin
-            instr_data_o = iccm_rdata_int;
+            //instr_data_o = iccm_rdata_int;
+            iccm_sel_en = 1'b1;
         end else begin
-            instr_data_o = 32'b0;
+            //instr_data_o = 32'b0;
+            iccm_sel_en = 1'b0;
         end
         iccm_raddr_int[`ICCM_ADDRW-1:0] = (instr_raddr_i[31:0] - `ICCM_START_ADDR);
         rom_raddr_int[`ROM_ADDRW-1:0] = (instr_raddr_i[31:0] - `ROM_START_ADDR);
     end
+
+    assign instr_data_o = (iccm_sel_en_d1r) ? (iccm_rdata_int) : (rom_rdata_int);
 
 
     logic [`DCCM_ADDRW-1:0] dccm_raddr_int;
@@ -155,32 +164,40 @@ module memory_top(
 
 
 
-    // Mux data port with ram/dccm
-    // instr_data_o / instr_raddr_i
+    logic dccm_sel_en;
+    reg dccm_sel_en_d1r;
+
     always @(*) begin
-        data_rd_data_o[31:0] = 32'b0;
-        ram_rd_en_int = 1'b0;
-        ram_wr_en_int = 1'b0;
-
-        dccm_wr_en_int = 1'b0;
-        dccm_rd_en_int = 1'b0;
-
         // R
         if( (data_rd_addr_i[31:0] >= `RAM_START_ADDR) && ((data_rd_addr_i[31:0] - `RAM_START_ADDR) < `RAM_SIZE) ) begin
-            data_rd_data_o[31:0] = ram_rdata_int[31:0];
-            ram_rd_en_int = data_rd_en_i;
+            dccm_sel_en = 1'b0;
         end else if( (data_rd_addr_i[31:0] >= `DCCM_START_ADDR) && ((data_rd_addr_i[31:0] - `DCCM_START_ADDR) < `DCCM_SIZE) ) begin
-            data_rd_data_o[31:0] = dccm_rdata_int[31:0];
-            dccm_rd_en_int = data_rd_en_i;
+            dccm_sel_en = 1'b1;
+        end else begin
+            dccm_sel_en = 1'b0;
         end
+    end
 
-        // W
-        if( (data_wr_addr_i[31:0] >= `RAM_START_ADDR) && ((data_wr_addr_i[31:0] - `RAM_START_ADDR) < `RAM_SIZE) ) begin
-            ram_wr_en_int = data_wr_en_i;
-        end else if( (data_wr_addr_i[31:0] >= `DCCM_START_ADDR) && ((data_wr_addr_i[31:0] - `DCCM_START_ADDR) < `DCCM_SIZE) ) begin
-            dccm_wr_en_int = data_wr_en_i;
+    assign ram_rd_en_int    = (~dccm_sel_en) ? (data_rd_en_i) : (1'b0);
+    assign dccm_rd_en_int   = (dccm_sel_en)  ? (data_rd_en_i) : (1'b0);
+
+    assign ram_wr_en_int    = (~dccm_sel_en)  ? (data_wr_en_i) : (1'b0);
+    assign dccm_wr_en_int   = (dccm_sel_en)   ? (data_wr_en_i) : (1'b0);
+
+
+    always @(posedge clk_i, negedge resetn_i) begin
+        if(~resetn_i) begin
+            dccm_sel_en_d1r <= 1'b0;
+            iccm_sel_en_d1r <= 1'b0;
+        end else begin
+            dccm_sel_en_d1r <= dccm_sel_en;
+            iccm_sel_en_d1r <= iccm_sel_en;
         end
+    end
 
+    assign data_rd_data_o[31:0] = (dccm_sel_en_d1r) ? (dccm_rdata_int) : (ram_rdata_int);
+
+    always @(*) begin
         // unmuxed logic
         ram_raddr_int[`RAM_ADDRW-1:0] = (data_rd_addr_i[31:0] - `RAM_START_ADDR);
         ram_waddr_int[`RAM_ADDRW-1:0] = (data_wr_addr_i[31:0] - `RAM_START_ADDR);
@@ -188,6 +205,8 @@ module memory_top(
         dccm_raddr_int[`DCCM_ADDRW-1:0] = (data_rd_addr_i[31:0] - `DCCM_START_ADDR);
         dccm_waddr_int[`DCCM_ADDRW-1:0] = (data_wr_addr_i[31:0] - `DCCM_START_ADDR);
     end
+
+
 
 
 

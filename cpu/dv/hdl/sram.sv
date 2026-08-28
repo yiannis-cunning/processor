@@ -75,13 +75,19 @@ module sram #(
     end
 
 
-    always @(*) begin
-        //rdata_o = mem_r[raddr_i[ADDRW-1:2]];
-        for (integer i = 0; i <= 3; i += 1) begin    
-            if(strb_en_i[i] == 1'b1)
-                rdata_o[i*8 +: 8] = mem_bytes[raddr_i + i];
-            else
-                rdata_o[i*8 +: 8] = 8'b0;
+    always @(posedge clk_i, negedge resetn_i) begin
+        if(~resetn_i) begin
+            rdata_o <= 32'd0;
+        end else if(rd_en_i) begin
+            //rdata_o = mem_r[raddr_i[ADDRW-1:2]];
+            for (integer i = 0; i <= 3; i += 1) begin    
+                if(strb_en_i[i] == 1'b1)
+                    rdata_o[i*8 +: 8] <= mem_bytes[raddr_i + i];
+                else
+                    rdata_o[i*8 +: 8] <= 8'b0;
+            end
+        end else begin
+            rdata_o <= rdata_o;
         end
     end
 
