@@ -1,0 +1,129 @@
+{
+  "schema": "xilinx.com:schema:json_instance:1.0",
+  "ip_inst": {
+    "xci_name": "design_1_lmb_mux_0_0",
+    "cell_name": "lmb_mux_0",
+    "component_reference": "xilinx.com:module_ref:lmb_mux:1.0",
+    "ip_revision": "1",
+    "gen_directory": ".",
+    "parameters": {
+      "component_parameters": {
+        "PORTA_ADDR_BASE": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "PORTA_ADDR_HIGH": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_BASE": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_SIZE": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "Component_Name": [ { "value": "design_1_lmb_mux_0_0", "resolve_type": "user", "usage": "all" } ]
+      },
+      "model_parameters": {
+        "PORTA_ADDR_BASE": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "PORTA_ADDR_HIGH": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_BASE": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_SIZE": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ]
+      },
+      "project_parameters": {
+        "ARCHITECTURE": [ { "value": "artix7" } ],
+        "BASE_BOARD_PART": [ { "value": "" } ],
+        "BOARD_CONNECTIONS": [ { "value": "" } ],
+        "DEVICE": [ { "value": "xc7a200t" } ],
+        "PACKAGE": [ { "value": "fbg484" } ],
+        "PREFHDL": [ { "value": "VERILOG" } ],
+        "SILICON_REVISION": [ { "value": "" } ],
+        "SIMULATOR_LANGUAGE": [ { "value": "MIXED" } ],
+        "SPEEDGRADE": [ { "value": "-2" } ],
+        "STATIC_POWER": [ { "value": "" } ],
+        "TEMPERATURE_GRADE": [ { "value": "" } ]
+      },
+      "runtime_parameters": {
+        "IPCONTEXT": [ { "value": "IP_Integrator" } ],
+        "IPREVISION": [ { "value": "1" } ],
+        "MANAGED": [ { "value": "TRUE" } ],
+        "OUTPUTDIR": [ { "value": "." } ],
+        "SELECTEDSIMMODEL": [ { "value": "" } ],
+        "SHAREDDIR": [ { "value": "../../ipshared" } ],
+        "SWVERSION": [ { "value": "2023.2" } ],
+        "SYNTHESISFLOW": [ { "value": "OOC_HIERARCHICAL" } ]
+      }
+    },
+    "boundary": {
+      "ports": {
+        "addr_i": [ { "direction": "in", "size_left": "31", "size_right": "0" } ],
+        "wdata_i": [ { "direction": "in", "size_left": "31", "size_right": "0" } ],
+        "rdata_o": [ { "direction": "out", "size_left": "31", "size_right": "0" } ],
+        "wr_en_i": [ { "direction": "in" } ],
+        "rd_en_i": [ { "direction": "in" } ],
+        "wr_byte_en_i": [ { "direction": "in", "size_left": "3", "size_right": "0" } ],
+        "dccm_addr_a_o": [ { "direction": "out", "size_left": "31", "size_right": "0" } ],
+        "dccm_wdata_a_o": [ { "direction": "out", "size_left": "31", "size_right": "0" } ],
+        "dccm_rdata_a_i": [ { "direction": "in", "size_left": "31", "size_right": "0", "driver_value": "0" } ],
+        "dccm_wr_en_a_o": [ { "direction": "out" } ],
+        "dccm_rd_en_a_o": [ { "direction": "out" } ],
+        "dccm_wr_byte_en_a_i": [ { "direction": "out", "size_left": "3", "size_right": "0" } ],
+        "dccm_addr_b_o": [ { "direction": "out", "size_left": "31", "size_right": "0" } ],
+        "dccm_wdata_b_o": [ { "direction": "out", "size_left": "31", "size_right": "0" } ],
+        "dccm_rdata_b_i": [ { "direction": "in", "size_left": "31", "size_right": "0", "driver_value": "0" } ],
+        "dccm_wr_en_b_o": [ { "direction": "out" } ],
+        "dccm_rd_en_b_o": [ { "direction": "out" } ],
+        "dccm_wr_byte_en_b_i": [ { "direction": "out", "size_left": "3", "size_right": "0" } ]
+      },
+      "interfaces": {
+        "S_LMB_PORT": {
+          "vlnv": "xilinx.com:interface:lmb:1.0",
+          "abstraction_type": "xilinx.com:interface:lmb_rtl:1.0",
+          "mode": "slave",
+          "parameters": {
+            "ADDR_WIDTH": [ { "value": "32", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "DATA_WIDTH": [ { "value": "32", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "READ_WRITE_MODE": [ { "value": "READ_WRITE", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
+            "PROTOCOL": [ { "value": "STANDARD", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
+          },
+          "port_maps": {
+            "ABUS": [ { "physical_name": "addr_i" } ],
+            "READSTROBE": [ { "physical_name": "rd_en_i" } ],
+            "WRITESTROBE": [ { "physical_name": "wr_en_i" } ],
+            "WRITEDBUS": [ { "physical_name": "wdata_i" } ],
+            "BE": [ { "physical_name": "wr_byte_en_i" } ],
+            "READDBUS": [ { "physical_name": "rdata_o" } ]
+          }
+        },
+        "M_LMB_PORT_A": {
+          "vlnv": "xilinx.com:interface:lmb:1.0",
+          "abstraction_type": "xilinx.com:interface:lmb_rtl:1.0",
+          "mode": "master",
+          "parameters": {
+            "ADDR_WIDTH": [ { "value": "32", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "DATA_WIDTH": [ { "value": "32", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "READ_WRITE_MODE": [ { "value": "READ_WRITE", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
+            "PROTOCOL": [ { "value": "STANDARD", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
+          },
+          "port_maps": {
+            "ABUS": [ { "physical_name": "dccm_addr_a_o" } ],
+            "READSTROBE": [ { "physical_name": "dccm_rd_en_a_o" } ],
+            "WRITESTROBE": [ { "physical_name": "dccm_wr_en_a_o" } ],
+            "WRITEDBUS": [ { "physical_name": "dccm_wdata_a_o" } ],
+            "BE": [ { "physical_name": "dccm_wr_byte_en_a_i" } ],
+            "READDBUS": [ { "physical_name": "dccm_rdata_a_i" } ]
+          }
+        },
+        "M_LMB_PORT_B": {
+          "vlnv": "xilinx.com:interface:lmb:1.0",
+          "abstraction_type": "xilinx.com:interface:lmb_rtl:1.0",
+          "mode": "master",
+          "parameters": {
+            "ADDR_WIDTH": [ { "value": "32", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "DATA_WIDTH": [ { "value": "32", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "READ_WRITE_MODE": [ { "value": "READ_WRITE", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
+            "PROTOCOL": [ { "value": "STANDARD", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
+          },
+          "port_maps": {
+            "ABUS": [ { "physical_name": "dccm_addr_b_o" } ],
+            "READSTROBE": [ { "physical_name": "dccm_rd_en_b_o" } ],
+            "WRITESTROBE": [ { "physical_name": "dccm_wr_en_b_o" } ],
+            "WRITEDBUS": [ { "physical_name": "dccm_wdata_b_o" } ],
+            "BE": [ { "physical_name": "dccm_wr_byte_en_b_i" } ],
+            "READDBUS": [ { "physical_name": "dccm_rdata_b_i" } ]
+          }
+        }
+      }
+    }
+  }
+}
