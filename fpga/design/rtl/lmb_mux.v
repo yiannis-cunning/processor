@@ -5,7 +5,7 @@ module lmb_mux #(
     parameter PORTA_ADDR_BASE = 0,
     parameter PORTA_ADDR_HIGH = 0,
     parameter PORTB_ADDR_BASE = 0,
-    parameter PORTB_ADDR_SIZE = 0
+    parameter PORTB_ADDR_HIGH = 0
     
     ) (
     //input wire clk_i,
@@ -80,7 +80,7 @@ module lmb_mux #(
     //assign dccm_rdata_a_i       = rdata_o
     assign dccm_wr_en_a_o       = wr_en_i;
     assign dccm_rd_en_a_o       = rd_en_i;
-    assign dccm_wr_ayte_en_a_i  = wr_ayte_en_i;
+    assign dccm_wr_byte_en_a_i  = wr_byte_en_i;
 
 
 endmodule

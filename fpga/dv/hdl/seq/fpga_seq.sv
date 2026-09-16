@@ -1,5 +1,5 @@
 
-`include "risc_mem_cfg.svh"
+`include "fpga_mem_map.svh"
 
 
 package main_seq_pkg;

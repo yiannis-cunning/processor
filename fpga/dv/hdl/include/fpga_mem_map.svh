@@ -1,7 +1,9 @@
 
 
 
-`define ICCM_SIZE_B 0x10000
-`define DCCM_SIZE_B 0x10000
+`define ICCM_SIZE_B 32'h10000
+`define DCCM_SIZE_B 32'h10000
 
-`define TEST_SIZE_WORDS 0x10
+`define TEST_SIZE_WORDS 10
+
+`define PROGRAM_DONE_ADDRESS 100

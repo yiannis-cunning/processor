@@ -31,7 +31,10 @@ module vivado_tb_top(
     logic clk_r = 0;
 
     cpu_system_wrapper I_dut(
-        .clk_i(fpga_sigs.clk),
+        .sys_clk_p(fpga_sigs.clk),
+        .sys_clk_n(~fpga_sigs.clk),
+        .led(),
+        .key_in(2'b0),
         .resetn_i(fpga_sigs.resetn),
         .run_req_i(fpga_sigs.run_req)
     );

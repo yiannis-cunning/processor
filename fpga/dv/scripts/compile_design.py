@@ -44,7 +44,7 @@ if __name__ == "__main__":
     tests           = "addi_slti 1 branch call compare const load_store logic_imm logic_reg sanity shift_imm shift_reg".split(" ")
     if(args.tests != None):
         tests       = args.tests.split(" ")
-    top_module      = "tb_top"
+    top_module      = "vivado_tb_top"
     worklib_name    = "worklib"
 
 
@@ -71,20 +71,29 @@ if __name__ == "__main__":
     compile_command = compile_command + f" --log {output_dir}/build/compile.log "
 
 
+    # DV FILES
     for f in get_files(tb_dir + "/interfaces/", ".*\\.sv"):
         compile_command += f + " " 
 
     for f in get_files(tb_dir + "/seq/", ".*\\.sv"):
         compile_command += f + " " 
 
+    for f in get_files(tb_dir, ".*\.sv"):
+        compile_command += f + " " 
+
+    # CPU RTL
     for f in get_files(cpu_rtl_dir, ".*\\.v"):
         compile_command += f + " " 
 
+    # FPGA RTL
     for f in get_files(fpga_rtl_dir, ".*\\.v"):
         compile_command += f + " " 
     
-    for f in get_files(tb_dir, ".*\.sv"):
-        compile_command += f + " " 
+    # Vivado primitives
+    compile_command += " /home/cunningy/Desktop/Xilinx/Vivado/2023.2/data/verilog/src/unisims/IBUFDS.v "
+
+    # Block design files
+    
 
     compile_command += f" --include {tb_dir}/include/ "
 
@@ -99,9 +108,6 @@ if __name__ == "__main__":
     print(result)
     print(f"Using xvlog to compile the design: {result}")
     assert result.returncode == 0, f"ERROR: xvlog compilation failed. Please check {output_dir}/build/compile.log"
-    if(args.compile_only):
-        print("Compile finished succesfully, exiting now.")
-        exit(0)
 
     # Make xelab command
     elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale '1ns/1ps' -debug typical" 
@@ -118,6 +124,10 @@ if __name__ == "__main__":
     print(result)
     assert result.returncode == 0, f"ERROR: velab elaboration failed. Please check {output_dir}/build/elaborate.log"
 
+
+    if(args.compile_only):
+        print("Compile finished succesfully, exiting now.")
+        exit(0)
 
     #
     # Run tests

@@ -1,7 +1,7 @@
 `include "fpga_mem_map.svh"
 
 
-interface cpu_if ();
+interface fpga_if ();
     logic resetn;
     logic clk;
     logic run_req;
