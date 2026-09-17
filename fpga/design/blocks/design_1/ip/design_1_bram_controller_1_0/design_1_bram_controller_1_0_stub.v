@@ -2,7 +2,7 @@
 // Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2023.2 (win64) Build 4029153 Fri Oct 13 20:14:34 MDT 2023
-// Date        : Mon Sep 14 04:19:44 2026
+// Date        : Thu Sep 17 00:48:23 2026
 // Host        : Yiannis-XPS running 64-bit major release  (build 9200)
 // Command     : write_verilog -force -mode synth_stub
 //               c:/Users/yiann/Desktop/gits/processor/fpga/design/blocks/design_1/ip/design_1_bram_controller_1_0/design_1_bram_controller_1_0_stub.v

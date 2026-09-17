@@ -2,7 +2,7 @@
 -- Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2023.2 (win64) Build 4029153 Fri Oct 13 20:14:34 MDT 2023
--- Date        : Mon Sep 14 04:19:43 2026
+-- Date        : Thu Sep 17 00:48:23 2026
 -- Host        : Yiannis-XPS running 64-bit major release  (build 9200)
 -- Command     : write_vhdl -force -mode funcsim
 --               c:/Users/yiann/Desktop/gits/processor/fpga/design/blocks/design_1/ip/design_1_bram_controller_0_0/design_1_bram_controller_0_0_sim_netlist.vhdl
@@ -18,9 +18,10 @@ use UNISIM.VCOMPONENTS.ALL;
 entity design_1_bram_controller_0_0_bram_controller is
   port (
     rdata_o : out STD_LOGIC_VECTOR ( 31 downto 0 );
+    bram_addr_o : out STD_LOGIC_VECTOR ( 3 downto 0 );
     bram_rdata_i : in STD_LOGIC_VECTOR ( 31 downto 0 );
     rd_en_i : in STD_LOGIC;
-    addr_i : in STD_LOGIC_VECTOR ( 1 downto 0 );
+    addr_i : in STD_LOGIC_VECTOR ( 5 downto 0 );
     clk_i : in STD_LOGIC;
     resetn_i : in STD_LOGIC
   );
@@ -29,8 +30,17 @@ entity design_1_bram_controller_0_0_bram_controller is
 end design_1_bram_controller_0_0_bram_controller;
 
 architecture STRUCTURE of design_1_bram_controller_0_0_bram_controller is
+  signal \bram_addr_o[9]_INST_0_i_1_n_0\ : STD_LOGIC;
+  signal \bram_addr_o[9]_INST_0_i_2_n_0\ : STD_LOGIC;
+  signal \bram_addr_o[9]_INST_0_i_3_n_0\ : STD_LOGIC;
+  signal \bram_addr_o[9]_INST_0_n_1\ : STD_LOGIC;
+  signal \bram_addr_o[9]_INST_0_n_2\ : STD_LOGIC;
+  signal \bram_addr_o[9]_INST_0_n_3\ : STD_LOGIC;
   signal \bram_raddr_d1r[1]_i_1_n_0\ : STD_LOGIC;
   signal p_0_in : STD_LOGIC_VECTOR ( 4 downto 3 );
+  signal \NLW_bram_addr_o[9]_INST_0_CO_UNCONNECTED\ : STD_LOGIC_VECTOR ( 3 to 3 );
+  attribute ADDER_THRESHOLD : integer;
+  attribute ADDER_THRESHOLD of \bram_addr_o[9]_INST_0\ : label is 35;
   attribute SOFT_HLUTNM : string;
   attribute SOFT_HLUTNM of \rdata_o[10]_INST_0\ : label is "soft_lutpair2";
   attribute SOFT_HLUTNM of \rdata_o[11]_INST_0\ : label is "soft_lutpair3";
@@ -57,6 +67,47 @@ architecture STRUCTURE of design_1_bram_controller_0_0_bram_controller is
   attribute SOFT_HLUTNM of \rdata_o[8]_INST_0\ : label is "soft_lutpair0";
   attribute SOFT_HLUTNM of \rdata_o[9]_INST_0\ : label is "soft_lutpair1";
 begin
+\bram_addr_o[9]_INST_0\: unisim.vcomponents.CARRY4
+     port map (
+      CI => '0',
+      CO(3) => \NLW_bram_addr_o[9]_INST_0_CO_UNCONNECTED\(3),
+      CO(2) => \bram_addr_o[9]_INST_0_n_1\,
+      CO(1) => \bram_addr_o[9]_INST_0_n_2\,
+      CO(0) => \bram_addr_o[9]_INST_0_n_3\,
+      CYINIT => '0',
+      DI(3) => '0',
+      DI(2 downto 1) => addr_i(4 downto 3),
+      DI(0) => '0',
+      O(3 downto 0) => bram_addr_o(3 downto 0),
+      S(3) => \bram_addr_o[9]_INST_0_i_1_n_0\,
+      S(2) => \bram_addr_o[9]_INST_0_i_2_n_0\,
+      S(1) => \bram_addr_o[9]_INST_0_i_3_n_0\,
+      S(0) => addr_i(2)
+    );
+\bram_addr_o[9]_INST_0_i_1\: unisim.vcomponents.LUT1
+    generic map(
+      INIT => X"1"
+    )
+        port map (
+      I0 => addr_i(5),
+      O => \bram_addr_o[9]_INST_0_i_1_n_0\
+    );
+\bram_addr_o[9]_INST_0_i_2\: unisim.vcomponents.LUT1
+    generic map(
+      INIT => X"1"
+    )
+        port map (
+      I0 => addr_i(4),
+      O => \bram_addr_o[9]_INST_0_i_2_n_0\
+    );
+\bram_addr_o[9]_INST_0_i_3\: unisim.vcomponents.LUT1
+    generic map(
+      INIT => X"1"
+    )
+        port map (
+      I0 => addr_i(3),
+      O => \bram_addr_o[9]_INST_0_i_3_n_0\
+    );
 \bram_raddr_d1r[1]_i_1\: unisim.vcomponents.LUT1
     generic map(
       INIT => X"1"
@@ -485,6 +536,7 @@ end design_1_bram_controller_0_0;
 
 architecture STRUCTURE of design_1_bram_controller_0_0 is
   signal \^addr_i\ : STD_LOGIC_VECTOR ( 31 downto 0 );
+  signal \^bram_addr_o\ : STD_LOGIC_VECTOR ( 12 downto 9 );
   signal \bram_byte_wr_en_o[3]_INST_0_i_1_n_0\ : STD_LOGIC;
   signal \^clk_i\ : STD_LOGIC;
   attribute X_INTERFACE_INFO : string;
@@ -506,7 +558,8 @@ architecture STRUCTURE of design_1_bram_controller_0_0 is
 begin
   \^addr_i\(14 downto 0) <= addr_i(14 downto 0);
   \^clk_i\ <= clk_i;
-  bram_addr_o(12 downto 0) <= \^addr_i\(14 downto 2);
+  bram_addr_o(12 downto 9) <= \^bram_addr_o\(12 downto 9);
+  bram_addr_o(8 downto 0) <= \^addr_i\(10 downto 2);
   bram_clk_o <= \^clk_i\;
 \bram_byte_wr_en_o[0]_INST_0\: unisim.vcomponents.LUT4
     generic map(
@@ -946,7 +999,9 @@ bram_en_o_INST_0: unisim.vcomponents.LUT2
     );
 inst: entity work.design_1_bram_controller_0_0_bram_controller
      port map (
+      addr_i(5 downto 2) => \^addr_i\(14 downto 11),
       addr_i(1 downto 0) => \^addr_i\(1 downto 0),
+      bram_addr_o(3 downto 0) => \^bram_addr_o\(12 downto 9),
       bram_rdata_i(31 downto 0) => bram_rdata_i(31 downto 0),
       clk_i => \^clk_i\,
       rd_en_i => rd_en_i,

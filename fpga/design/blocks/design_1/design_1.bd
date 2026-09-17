@@ -154,6 +154,9 @@
         "xci_path": "ip\\design_1_bram_controller_0_0\\design_1_bram_controller_0_0.xci",
         "inst_hier_path": "bram_controller_0",
         "parameters": {
+          "BASE_ADDR": {
+            "value": "4096"
+          },
           "WORD_ADDR_W": {
             "value": "13"
           }
@@ -287,7 +290,7 @@
         "inst_hier_path": "bram_controller_1",
         "parameters": {
           "BASE_ADDR": {
-            "value": "2048"
+            "value": "36864"
           },
           "WORD_ADDR_W": {
             "value": "13"
@@ -420,6 +423,20 @@
         "xci_name": "design_1_lmb_mux_0_0",
         "xci_path": "ip\\design_1_lmb_mux_0_0\\design_1_lmb_mux_0_0.xci",
         "inst_hier_path": "lmb_mux_0",
+        "parameters": {
+          "PORTA_ADDR_BASE": {
+            "value": "36864"
+          },
+          "PORTA_ADDR_HIGH": {
+            "value": "69632"
+          },
+          "PORTB_ADDR_BASE": {
+            "value": "73728"
+          },
+          "PORTB_ADDR_HIGH": {
+            "value": "73856"
+          }
+        },
         "reference_info": {
           "ref_type": "hdl",
           "ref_name": "lmb_mux",
@@ -553,7 +570,7 @@
         "inst_hier_path": "bram_controller_2",
         "parameters": {
           "BASE_ADDR": {
-            "value": "1024"
+            "value": "73728"
           },
           "WORD_ADDR_W": {
             "value": "5"

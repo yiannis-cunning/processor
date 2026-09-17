@@ -2,7 +2,7 @@
 // Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2023.2 (win64) Build 4029153 Fri Oct 13 20:14:34 MDT 2023
-// Date        : Mon Sep 14 04:19:43 2026
+// Date        : Thu Sep 17 00:48:23 2026
 // Host        : Yiannis-XPS running 64-bit major release  (build 9200)
 // Command     : write_verilog -force -mode funcsim
 //               c:/Users/yiann/Desktop/gits/processor/fpga/design/blocks/design_1/ip/design_1_bram_controller_0_0/design_1_bram_controller_0_0_sim_netlist.v
@@ -47,6 +47,7 @@ module design_1_bram_controller_0_0
   (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 BRAM_PORT_A CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME BRAM_PORT_A, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1" *) output bram_clk_o;
 
   wire [31:0]addr_i;
+  wire [12:9]\^bram_addr_o ;
   wire [3:0]bram_byte_wr_en_o;
   wire \bram_byte_wr_en_o[3]_INST_0_i_1_n_0 ;
   wire bram_en_o;
@@ -60,7 +61,8 @@ module design_1_bram_controller_0_0
   wire [3:0]wr_byte_en_i;
   wire wr_en_i;
 
-  assign bram_addr_o[12:0] = addr_i[14:2];
+  assign bram_addr_o[12:9] = \^bram_addr_o [12:9];
+  assign bram_addr_o[8:0] = addr_i[10:2];
   assign bram_clk_o = clk_i;
   LUT4 #(
     .INIT(16'h0400)) 
@@ -385,7 +387,8 @@ module design_1_bram_controller_0_0
         .I3(addr_i[1]),
         .O(bram_wdata_o[9]));
   design_1_bram_controller_0_0_bram_controller inst
-       (.addr_i(addr_i[1:0]),
+       (.addr_i({addr_i[14:11],addr_i[1:0]}),
+        .bram_addr_o(\^bram_addr_o ),
         .bram_rdata_i(bram_rdata_i),
         .clk_i(clk_i),
         .rd_en_i(rd_en_i),
@@ -396,19 +399,28 @@ endmodule
 (* ORIG_REF_NAME = "bram_controller" *) 
 module design_1_bram_controller_0_0_bram_controller
    (rdata_o,
+    bram_addr_o,
     bram_rdata_i,
     rd_en_i,
     addr_i,
     clk_i,
     resetn_i);
   output [31:0]rdata_o;
+  output [3:0]bram_addr_o;
   input [31:0]bram_rdata_i;
   input rd_en_i;
-  input [1:0]addr_i;
+  input [5:0]addr_i;
   input clk_i;
   input resetn_i;
 
-  wire [1:0]addr_i;
+  wire [5:0]addr_i;
+  wire [3:0]bram_addr_o;
+  wire \bram_addr_o[9]_INST_0_i_1_n_0 ;
+  wire \bram_addr_o[9]_INST_0_i_2_n_0 ;
+  wire \bram_addr_o[9]_INST_0_i_3_n_0 ;
+  wire \bram_addr_o[9]_INST_0_n_1 ;
+  wire \bram_addr_o[9]_INST_0_n_2 ;
+  wire \bram_addr_o[9]_INST_0_n_3 ;
   wire \bram_raddr_d1r[1]_i_1_n_0 ;
   wire [31:0]bram_rdata_i;
   wire clk_i;
@@ -416,7 +428,31 @@ module design_1_bram_controller_0_0_bram_controller
   wire rd_en_i;
   wire [31:0]rdata_o;
   wire resetn_i;
+  wire [3:3]\NLW_bram_addr_o[9]_INST_0_CO_UNCONNECTED ;
 
+  (* ADDER_THRESHOLD = "35" *) 
+  CARRY4 \bram_addr_o[9]_INST_0 
+       (.CI(1'b0),
+        .CO({\NLW_bram_addr_o[9]_INST_0_CO_UNCONNECTED [3],\bram_addr_o[9]_INST_0_n_1 ,\bram_addr_o[9]_INST_0_n_2 ,\bram_addr_o[9]_INST_0_n_3 }),
+        .CYINIT(1'b0),
+        .DI({1'b0,addr_i[4:3],1'b0}),
+        .O(bram_addr_o),
+        .S({\bram_addr_o[9]_INST_0_i_1_n_0 ,\bram_addr_o[9]_INST_0_i_2_n_0 ,\bram_addr_o[9]_INST_0_i_3_n_0 ,addr_i[2]}));
+  LUT1 #(
+    .INIT(2'h1)) 
+    \bram_addr_o[9]_INST_0_i_1 
+       (.I0(addr_i[5]),
+        .O(\bram_addr_o[9]_INST_0_i_1_n_0 ));
+  LUT1 #(
+    .INIT(2'h1)) 
+    \bram_addr_o[9]_INST_0_i_2 
+       (.I0(addr_i[4]),
+        .O(\bram_addr_o[9]_INST_0_i_2_n_0 ));
+  LUT1 #(
+    .INIT(2'h1)) 
+    \bram_addr_o[9]_INST_0_i_3 
+       (.I0(addr_i[3]),
+        .O(\bram_addr_o[9]_INST_0_i_3_n_0 ));
   LUT1 #(
     .INIT(2'h1)) 
     \bram_raddr_d1r[1]_i_1 

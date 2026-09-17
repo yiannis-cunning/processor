@@ -8,12 +8,12 @@
     "gen_directory": ".",
     "parameters": {
       "component_parameters": {
-        "BASE_ADDR": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "BASE_ADDR": [ { "value": "4096", "value_src": "user", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "WORD_ADDR_W": [ { "value": "13", "value_src": "user", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "Component_Name": [ { "value": "design_1_bram_controller_0_0", "resolve_type": "user", "usage": "all" } ]
       },
       "model_parameters": {
-        "BASE_ADDR": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "BASE_ADDR": [ { "value": "4096", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "WORD_ADDR_W": [ { "value": "13", "resolve_type": "generated", "format": "long", "usage": "all" } ]
       },
       "project_parameters": {

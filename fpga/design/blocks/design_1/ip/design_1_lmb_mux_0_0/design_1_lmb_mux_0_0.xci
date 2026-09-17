@@ -8,17 +8,17 @@
     "gen_directory": ".",
     "parameters": {
       "component_parameters": {
-        "PORTA_ADDR_BASE": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
-        "PORTA_ADDR_HIGH": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
-        "PORTB_ADDR_BASE": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
-        "PORTB_ADDR_HIGH": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "PORTA_ADDR_BASE": [ { "value": "36864", "value_src": "user", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "PORTA_ADDR_HIGH": [ { "value": "69632", "value_src": "user", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_BASE": [ { "value": "73728", "value_src": "user", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_HIGH": [ { "value": "73856", "value_src": "user", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "Component_Name": [ { "value": "design_1_lmb_mux_0_0", "resolve_type": "user", "usage": "all" } ]
       },
       "model_parameters": {
-        "PORTA_ADDR_BASE": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
-        "PORTA_ADDR_HIGH": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
-        "PORTB_ADDR_BASE": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
-        "PORTB_ADDR_HIGH": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ]
+        "PORTA_ADDR_BASE": [ { "value": "36864", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "PORTA_ADDR_HIGH": [ { "value": "69632", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_BASE": [ { "value": "73728", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "PORTB_ADDR_HIGH": [ { "value": "73856", "resolve_type": "generated", "format": "long", "usage": "all" } ]
       },
       "project_parameters": {
         "ARCHITECTURE": [ { "value": "artix7" } ],

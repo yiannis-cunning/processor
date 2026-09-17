@@ -116,10 +116,10 @@ output wire dccm_rd_en_b_o;
 output wire [3 : 0] dccm_wr_byte_en_b_i;
 
   lmb_mux #(
-    .PORTA_ADDR_BASE(0),
-    .PORTA_ADDR_HIGH(0),
-    .PORTB_ADDR_BASE(0),
-    .PORTB_ADDR_HIGH(0)
+    .PORTA_ADDR_BASE(36864),
+    .PORTA_ADDR_HIGH(69632),
+    .PORTB_ADDR_BASE(73728),
+    .PORTB_ADDR_HIGH(73856)
   ) inst (
     .addr_i(addr_i),
     .wdata_i(wdata_i),

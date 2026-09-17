@@ -52,7 +52,7 @@
 
 (* X_CORE_INFO = "bram_controller,Vivado 2023.2" *)
 (* CHECK_LICENSE_TYPE = "design_1_bram_controller_2_0,bram_controller,{}" *)
-(* CORE_GENERATION_INFO = "design_1_bram_controller_2_0,bram_controller,{x_ipProduct=Vivado 2023.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=bram_controller,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,BASE_ADDR=1024,WORD_ADDR_W=5}" *)
+(* CORE_GENERATION_INFO = "design_1_bram_controller_2_0,bram_controller,{x_ipProduct=Vivado 2023.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=bram_controller,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,BASE_ADDR=73728,WORD_ADDR_W=5}" *)
 (* IP_DEFINITION_SOURCE = "module_ref" *)
 (* DowngradeIPIdentifiedWarnings = "yes" *)
 module design_1_bram_controller_2_0 (
@@ -102,7 +102,7 @@ output wire [4 : 0] bram_addr_o;
 output wire bram_clk_o;
 
   bram_controller #(
-    .BASE_ADDR(1024),
+    .BASE_ADDR(73728),
     .WORD_ADDR_W(5)
   ) inst (
     .clk_i(clk_i),

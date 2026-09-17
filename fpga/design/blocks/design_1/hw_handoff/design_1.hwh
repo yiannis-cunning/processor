@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Wed Sep 16 05:19:46 2026" VIVADOVERSION="2023.2">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Thu Sep 17 00:47:06 2026" VIVADOVERSION="2023.2">
 
   <SYSTEMINFO ARCH="artix7" DEVICE="7a200t" NAME="design_1" PACKAGE="fbg484" SPEEDGRADE="-2"/>
 
@@ -455,7 +455,7 @@
     <MODULE COREREVISION="1" FULLNAME="/bram_controller_0" HWVERSION="1.0" INSTANCE="bram_controller_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="bram_controller" VLNV="xilinx.com:module_ref:bram_controller:1.0">
       <DOCUMENTS/>
       <PARAMETERS>
-        <PARAMETER NAME="BASE_ADDR" VALUE="0"/>
+        <PARAMETER NAME="BASE_ADDR" VALUE="4096"/>
         <PARAMETER NAME="WORD_ADDR_W" VALUE="13"/>
         <PARAMETER NAME="Component_Name" VALUE="design_1_bram_controller_0_0"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
@@ -568,7 +568,7 @@
     <MODULE COREREVISION="1" FULLNAME="/bram_controller_1" HWVERSION="1.0" INSTANCE="bram_controller_1" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="bram_controller" VLNV="xilinx.com:module_ref:bram_controller:1.0">
       <DOCUMENTS/>
       <PARAMETERS>
-        <PARAMETER NAME="BASE_ADDR" VALUE="2048"/>
+        <PARAMETER NAME="BASE_ADDR" VALUE="36864"/>
         <PARAMETER NAME="WORD_ADDR_W" VALUE="13"/>
         <PARAMETER NAME="Component_Name" VALUE="design_1_bram_controller_1_0"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
@@ -681,7 +681,7 @@
     <MODULE COREREVISION="1" FULLNAME="/bram_controller_2" HWVERSION="1.0" INSTANCE="bram_controller_2" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="bram_controller" VLNV="xilinx.com:module_ref:bram_controller:1.0">
       <DOCUMENTS/>
       <PARAMETERS>
-        <PARAMETER NAME="BASE_ADDR" VALUE="1024"/>
+        <PARAMETER NAME="BASE_ADDR" VALUE="73728"/>
         <PARAMETER NAME="WORD_ADDR_W" VALUE="5"/>
         <PARAMETER NAME="Component_Name" VALUE="design_1_bram_controller_2_0"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
@@ -988,10 +988,10 @@
     <MODULE COREREVISION="1" FULLNAME="/lmb_mux_0" HWVERSION="1.0" INSTANCE="lmb_mux_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="lmb_mux" VLNV="xilinx.com:module_ref:lmb_mux:1.0">
       <DOCUMENTS/>
       <PARAMETERS>
-        <PARAMETER NAME="PORTA_ADDR_BASE" VALUE="0"/>
-        <PARAMETER NAME="PORTA_ADDR_HIGH" VALUE="0"/>
-        <PARAMETER NAME="PORTB_ADDR_BASE" VALUE="0"/>
-        <PARAMETER NAME="PORTB_ADDR_HIGH" VALUE="0"/>
+        <PARAMETER NAME="PORTA_ADDR_BASE" VALUE="36864"/>
+        <PARAMETER NAME="PORTA_ADDR_HIGH" VALUE="69632"/>
+        <PARAMETER NAME="PORTB_ADDR_BASE" VALUE="73728"/>
+        <PARAMETER NAME="PORTB_ADDR_HIGH" VALUE="73856"/>
         <PARAMETER NAME="Component_Name" VALUE="design_1_lmb_mux_0_0"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
       </PARAMETERS>

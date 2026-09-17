@@ -101,7 +101,7 @@ output wire [12 : 0] bram_addr_o;
 output wire bram_clk_o;
 
   bram_controller #(
-    .BASE_ADDR(0),
+    .BASE_ADDR(4096),
     .WORD_ADDR_W(13)
   ) inst (
     .clk_i(clk_i),

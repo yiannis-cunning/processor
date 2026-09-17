@@ -52,7 +52,7 @@
 
 (* X_CORE_INFO = "lmb_mux,Vivado 2023.2" *)
 (* CHECK_LICENSE_TYPE = "design_1_lmb_mux_0_0,lmb_mux,{}" *)
-(* CORE_GENERATION_INFO = "design_1_lmb_mux_0_0,lmb_mux,{x_ipProduct=Vivado 2023.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=lmb_mux,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,PORTA_ADDR_BASE=0,PORTA_ADDR_HIGH=0,PORTB_ADDR_BASE=0,PORTB_ADDR_HIGH=0}" *)
+(* CORE_GENERATION_INFO = "design_1_lmb_mux_0_0,lmb_mux,{x_ipProduct=Vivado 2023.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=lmb_mux,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,PORTA_ADDR_BASE=36864,PORTA_ADDR_HIGH=69632,PORTB_ADDR_BASE=73728,PORTB_ADDR_HIGH=73856}" *)
 (* IP_DEFINITION_SOURCE = "module_ref" *)
 (* DowngradeIPIdentifiedWarnings = "yes" *)
 module design_1_lmb_mux_0_0 (
@@ -117,10 +117,10 @@ output wire dccm_rd_en_b_o;
 output wire [3 : 0] dccm_wr_byte_en_b_i;
 
   lmb_mux #(
-    .PORTA_ADDR_BASE(0),
-    .PORTA_ADDR_HIGH(0),
-    .PORTB_ADDR_BASE(0),
-    .PORTB_ADDR_HIGH(0)
+    .PORTA_ADDR_BASE(36864),
+    .PORTA_ADDR_HIGH(69632),
+    .PORTB_ADDR_BASE(73728),
+    .PORTB_ADDR_HIGH(73856)
   ) inst (
     .addr_i(addr_i),
     .wdata_i(wdata_i),
