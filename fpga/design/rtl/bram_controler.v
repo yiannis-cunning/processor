@@ -42,8 +42,9 @@ module bram_controller #(
 
 
     );
-
+    parameter HIGH_ADDR = (1 << (WORD_ADDR_W + 2)) + BASE_ADDR;
     reg [31:0] bram_addr_int;
+    reg in_addr_range;
 
     reg [31:0] bram_raddr_d1r;
     always @(posedge clk_i, negedge resetn_i) begin
@@ -67,10 +68,15 @@ module bram_controller #(
         bram_addr_int = addr_i - BASE_ADDR;              // Addr Offset - assume always within range
         bram_addr_int = {2'b0, bram_addr_int[31:2]};            // Byte -> Word addr, round down
     end
+
+    always @(*) begin
+        in_addr_range = (addr_i >= BASE_ADDR) & (addr_i < HIGH_ADDR);
+    end
+
     assign bram_addr_o = bram_addr_int[WORD_ADDR_W-1:0];
 
     // Static assignments
-    assign bram_byte_wr_en_o = (wr_byte_en_i << addr_i[1:0] ) & {4{wr_en_i}};
+    assign bram_byte_wr_en_o = (wr_byte_en_i << addr_i[1:0] ) & {4{wr_en_i}} & {4{in_addr_range}};
     assign bram_en_o = wr_en_i | rd_en_i; // Generally CPU expects rd_data_i to stay constant until next access with rd_en high. Not how this works here as wr_en will also do a read. Not a issue as ICCM I/F does not writes.
     assign bram_clk_o = clk_i;
     

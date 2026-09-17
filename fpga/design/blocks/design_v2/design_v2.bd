@@ -1,0 +1,905 @@
+{
+  "design": {
+    "design_info": {
+      "boundary_crc": "0xB09596EBB09596EB",
+      "device": "xc7a200tfbg484-2",
+      "name": "design_v2",
+      "rev_ctrl_bd_flag": "RevCtrlBdOff",
+      "synth_flow_mode": "Hierarchical",
+      "tool_version": "2023.2",
+      "validated": "true"
+    },
+    "design_tree": {
+      "cpu_top_0": "",
+      "bram_controller_0": "",
+      "bram_prim_0": "",
+      "lmb_mux_0": "",
+      "bram_prim_1": "",
+      "bram_controller_1": "",
+      "bram_controller_2": "",
+      "bram_gpio_0": ""
+    },
+    "ports": {
+      "resetn_i": {
+        "direction": "I"
+      },
+      "clk_i": {
+        "direction": "I"
+      },
+      "run_req_i": {
+        "direction": "I"
+      },
+      "gpio_i": {
+        "direction": "I",
+        "left": "31",
+        "right": "0"
+      },
+      "gpio_o": {
+        "direction": "O",
+        "left": "31",
+        "right": "0"
+      }
+    },
+    "components": {
+      "cpu_top_0": {
+        "vlnv": "xilinx.com:module_ref:cpu_top:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_cpu_top_0_0",
+        "xci_path": "ip/design_v2_cpu_top_0_0/design_v2_cpu_top_0_0.xci",
+        "inst_hier_path": "cpu_top_0",
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "cpu_top",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "ICCM_LMB_M": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "iccm_word_raddr_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "iccm_rd_en_o",
+                "direction": "O"
+              },
+              "WRITESTROBE": {
+                "physical_name": "iccm_wr_en_o",
+                "direction": "O"
+              },
+              "WRITEDBUS": {
+                "physical_name": "iccm_wdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "iccm_wr_byte_en_i",
+                "direction": "O",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "iccm_data_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          },
+          "DCCM_LMB_M": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "dccm_addr_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "dccm_rd_en_o",
+                "direction": "O"
+              },
+              "WRITESTROBE": {
+                "physical_name": "dccm_wr_en_o",
+                "direction": "O"
+              },
+              "WRITEDBUS": {
+                "physical_name": "dccm_wdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "dccm_wr_byte_en_i",
+                "direction": "O",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "dccm_rdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          }
+        },
+        "ports": {
+          "resetn_i": {
+            "direction": "I"
+          },
+          "clk_i": {
+            "direction": "I"
+          },
+          "run_req_i": {
+            "direction": "I"
+          },
+          "done_state": {
+            "direction": "O"
+          }
+        }
+      },
+      "bram_controller_0": {
+        "vlnv": "xilinx.com:module_ref:bram_controller:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_bram_controller_0_0",
+        "xci_path": "ip/design_v2_bram_controller_0_0/design_v2_bram_controller_0_0.xci",
+        "inst_hier_path": "bram_controller_0",
+        "parameters": {
+          "WORD_ADDR_W": {
+            "value": "13"
+          }
+        },
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "bram_controller",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "S_LMB_PORT": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "addr_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "rd_en_i",
+                "direction": "I"
+              },
+              "WRITESTROBE": {
+                "physical_name": "wr_en_i",
+                "direction": "I"
+              },
+              "WRITEDBUS": {
+                "physical_name": "wdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "wr_byte_en_i",
+                "direction": "I",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "rdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          },
+          "BRAM_PORT_A": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:bram:1.0",
+            "vlnv": "xilinx.com:interface:bram_rtl:1.0",
+            "port_maps": {
+              "EN": {
+                "physical_name": "bram_en_o",
+                "direction": "O"
+              },
+              "DOUT": {
+                "physical_name": "bram_rdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "DIN": {
+                "physical_name": "bram_wdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "WE": {
+                "physical_name": "bram_byte_wr_en_o",
+                "direction": "O",
+                "left": "3",
+                "right": "0"
+              },
+              "ADDR": {
+                "physical_name": "bram_addr_o",
+                "direction": "O",
+                "left": "12",
+                "right": "0"
+              },
+              "CLK": {
+                "physical_name": "bram_clk_o",
+                "direction": "O"
+              }
+            }
+          }
+        },
+        "ports": {
+          "clk_i": {
+            "direction": "I"
+          },
+          "resetn_i": {
+            "direction": "I"
+          }
+        }
+      },
+      "bram_prim_0": {
+        "vlnv": "xilinx.com:module_ref:bram_prim:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_bram_prim_0_0",
+        "xci_path": "ip/design_v2_bram_prim_0_0/design_v2_bram_prim_0_0.xci",
+        "inst_hier_path": "bram_prim_0",
+        "parameters": {
+          "ADDR_WIDTH": {
+            "value": "13"
+          },
+          "MEM_INIT_FILENAME": {
+            "value": "iccm.hex"
+          }
+        },
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "bram_prim",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "BRAM_PORT_A": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:bram:1.0",
+            "vlnv": "xilinx.com:interface:bram_rtl:1.0",
+            "port_maps": {
+              "EN": {
+                "physical_name": "en_i",
+                "direction": "I"
+              },
+              "DOUT": {
+                "physical_name": "rdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "DIN": {
+                "physical_name": "wdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "WE": {
+                "physical_name": "byte_wr_en_i",
+                "direction": "I",
+                "left": "3",
+                "right": "0"
+              },
+              "ADDR": {
+                "physical_name": "addr_i",
+                "direction": "I",
+                "left": "12",
+                "right": "0"
+              },
+              "CLK": {
+                "physical_name": "clk_i",
+                "direction": "I"
+              }
+            }
+          }
+        }
+      },
+      "lmb_mux_0": {
+        "vlnv": "xilinx.com:module_ref:lmb_mux:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_lmb_mux_0_0",
+        "xci_path": "ip/design_v2_lmb_mux_0_0/design_v2_lmb_mux_0_0.xci",
+        "inst_hier_path": "lmb_mux_0",
+        "parameters": {
+          "PORTA_ADDR_BASE": {
+            "value": "36864"
+          },
+          "PORTA_ADDR_HIGH": {
+            "value": "69632"
+          },
+          "PORTB_ADDR_BASE": {
+            "value": "73728"
+          },
+          "PORTB_ADDR_HIGH": {
+            "value": "73856"
+          }
+        },
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "lmb_mux",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "S_LMB_PORT": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "addr_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "rd_en_i",
+                "direction": "I"
+              },
+              "WRITESTROBE": {
+                "physical_name": "wr_en_i",
+                "direction": "I"
+              },
+              "WRITEDBUS": {
+                "physical_name": "wdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "wr_byte_en_i",
+                "direction": "I",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "rdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          },
+          "M_LMB_PORT_A": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "dccm_addr_a_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "dccm_rd_en_a_o",
+                "direction": "O"
+              },
+              "WRITESTROBE": {
+                "physical_name": "dccm_wr_en_a_o",
+                "direction": "O"
+              },
+              "WRITEDBUS": {
+                "physical_name": "dccm_wdata_a_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "dccm_wr_byte_en_a_i",
+                "direction": "O",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "dccm_rdata_a_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          },
+          "M_LMB_PORT_B": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "dccm_addr_b_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "dccm_rd_en_b_o",
+                "direction": "O"
+              },
+              "WRITESTROBE": {
+                "physical_name": "dccm_wr_en_b_o",
+                "direction": "O"
+              },
+              "WRITEDBUS": {
+                "physical_name": "dccm_wdata_b_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "dccm_wr_byte_en_b_i",
+                "direction": "O",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "dccm_rdata_b_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          }
+        },
+        "ports": {
+          "clk_i": {
+            "direction": "I"
+          },
+          "resetn_i": {
+            "direction": "I"
+          }
+        }
+      },
+      "bram_prim_1": {
+        "vlnv": "xilinx.com:module_ref:bram_prim:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_bram_prim_1_0",
+        "xci_path": "ip/design_v2_bram_prim_1_0/design_v2_bram_prim_1_0.xci",
+        "inst_hier_path": "bram_prim_1",
+        "parameters": {
+          "ADDR_WIDTH": {
+            "value": "13"
+          },
+          "MEM_INIT_FILENAME": {
+            "value": "dccm.hex"
+          }
+        },
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "bram_prim",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "BRAM_PORT_A": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:bram:1.0",
+            "vlnv": "xilinx.com:interface:bram_rtl:1.0",
+            "port_maps": {
+              "EN": {
+                "physical_name": "en_i",
+                "direction": "I"
+              },
+              "DOUT": {
+                "physical_name": "rdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "DIN": {
+                "physical_name": "wdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "WE": {
+                "physical_name": "byte_wr_en_i",
+                "direction": "I",
+                "left": "3",
+                "right": "0"
+              },
+              "ADDR": {
+                "physical_name": "addr_i",
+                "direction": "I",
+                "left": "12",
+                "right": "0"
+              },
+              "CLK": {
+                "physical_name": "clk_i",
+                "direction": "I"
+              }
+            }
+          }
+        }
+      },
+      "bram_controller_1": {
+        "vlnv": "xilinx.com:module_ref:bram_controller:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_bram_controller_1_0",
+        "xci_path": "ip/design_v2_bram_controller_1_0/design_v2_bram_controller_1_0.xci",
+        "inst_hier_path": "bram_controller_1",
+        "parameters": {
+          "BASE_ADDR": {
+            "value": "36864"
+          },
+          "WORD_ADDR_W": {
+            "value": "13"
+          }
+        },
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "bram_controller",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "S_LMB_PORT": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "addr_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "rd_en_i",
+                "direction": "I"
+              },
+              "WRITESTROBE": {
+                "physical_name": "wr_en_i",
+                "direction": "I"
+              },
+              "WRITEDBUS": {
+                "physical_name": "wdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "wr_byte_en_i",
+                "direction": "I",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "rdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          },
+          "BRAM_PORT_A": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:bram:1.0",
+            "vlnv": "xilinx.com:interface:bram_rtl:1.0",
+            "port_maps": {
+              "EN": {
+                "physical_name": "bram_en_o",
+                "direction": "O"
+              },
+              "DOUT": {
+                "physical_name": "bram_rdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "DIN": {
+                "physical_name": "bram_wdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "WE": {
+                "physical_name": "bram_byte_wr_en_o",
+                "direction": "O",
+                "left": "3",
+                "right": "0"
+              },
+              "ADDR": {
+                "physical_name": "bram_addr_o",
+                "direction": "O",
+                "left": "12",
+                "right": "0"
+              },
+              "CLK": {
+                "physical_name": "bram_clk_o",
+                "direction": "O"
+              }
+            }
+          }
+        },
+        "ports": {
+          "clk_i": {
+            "direction": "I"
+          },
+          "resetn_i": {
+            "direction": "I"
+          }
+        }
+      },
+      "bram_controller_2": {
+        "vlnv": "xilinx.com:module_ref:bram_controller:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_bram_controller_2_0",
+        "xci_path": "ip/design_v2_bram_controller_2_0/design_v2_bram_controller_2_0.xci",
+        "inst_hier_path": "bram_controller_2",
+        "parameters": {
+          "BASE_ADDR": {
+            "value": "73728"
+          },
+          "WORD_ADDR_W": {
+            "value": "5"
+          }
+        },
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "bram_controller",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "S_LMB_PORT": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:lmb:1.0",
+            "vlnv": "xilinx.com:interface:lmb_rtl:1.0",
+            "port_maps": {
+              "ABUS": {
+                "physical_name": "addr_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "READSTROBE": {
+                "physical_name": "rd_en_i",
+                "direction": "I"
+              },
+              "WRITESTROBE": {
+                "physical_name": "wr_en_i",
+                "direction": "I"
+              },
+              "WRITEDBUS": {
+                "physical_name": "wdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "BE": {
+                "physical_name": "wr_byte_en_i",
+                "direction": "I",
+                "left": "3",
+                "right": "0"
+              },
+              "READDBUS": {
+                "physical_name": "rdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              }
+            }
+          },
+          "BRAM_PORT_A": {
+            "mode": "Master",
+            "vlnv_bus_definition": "xilinx.com:interface:bram:1.0",
+            "vlnv": "xilinx.com:interface:bram_rtl:1.0",
+            "port_maps": {
+              "EN": {
+                "physical_name": "bram_en_o",
+                "direction": "O"
+              },
+              "DOUT": {
+                "physical_name": "bram_rdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "DIN": {
+                "physical_name": "bram_wdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "WE": {
+                "physical_name": "bram_byte_wr_en_o",
+                "direction": "O",
+                "left": "3",
+                "right": "0"
+              },
+              "ADDR": {
+                "physical_name": "bram_addr_o",
+                "direction": "O",
+                "left": "4",
+                "right": "0"
+              },
+              "CLK": {
+                "physical_name": "bram_clk_o",
+                "direction": "O"
+              }
+            }
+          }
+        },
+        "ports": {
+          "clk_i": {
+            "direction": "I"
+          },
+          "resetn_i": {
+            "direction": "I"
+          }
+        }
+      },
+      "bram_gpio_0": {
+        "vlnv": "xilinx.com:module_ref:bram_gpio:1.0",
+        "ip_revision": "1",
+        "xci_name": "design_v2_bram_gpio_0_0",
+        "xci_path": "ip/design_v2_bram_gpio_0_0/design_v2_bram_gpio_0_0.xci",
+        "inst_hier_path": "bram_gpio_0",
+        "reference_info": {
+          "ref_type": "hdl",
+          "ref_name": "bram_gpio",
+          "boundary_crc": "0x0"
+        },
+        "interface_ports": {
+          "BRAM_PORT_A": {
+            "mode": "Slave",
+            "vlnv_bus_definition": "xilinx.com:interface:bram:1.0",
+            "vlnv": "xilinx.com:interface:bram_rtl:1.0",
+            "port_maps": {
+              "EN": {
+                "physical_name": "bram_en_i",
+                "direction": "I"
+              },
+              "DOUT": {
+                "physical_name": "bram_rdata_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "DIN": {
+                "physical_name": "bram_wdata_i",
+                "direction": "I",
+                "left": "31",
+                "right": "0"
+              },
+              "WE": {
+                "physical_name": "bram_byte_wr_en_i",
+                "direction": "I",
+                "left": "3",
+                "right": "0"
+              },
+              "ADDR": {
+                "physical_name": "bram_addr_i",
+                "direction": "I",
+                "left": "4",
+                "right": "0"
+              },
+              "CLK": {
+                "physical_name": "bram_clk_i",
+                "direction": "I"
+              }
+            }
+          }
+        },
+        "ports": {
+          "clk_i": {
+            "direction": "I"
+          },
+          "resetn_i": {
+            "direction": "I"
+          },
+          "gpio_i": {
+            "direction": "I",
+            "left": "31",
+            "right": "0"
+          },
+          "gpio_o": {
+            "direction": "O",
+            "left": "31",
+            "right": "0"
+          }
+        }
+      }
+    },
+    "interface_nets": {
+      "bram_controller_0_BRAM_PORT_A": {
+        "interface_ports": [
+          "bram_controller_0/BRAM_PORT_A",
+          "bram_prim_0/BRAM_PORT_A"
+        ]
+      },
+      "bram_controller_1_BRAM_PORT_A": {
+        "interface_ports": [
+          "bram_controller_1/BRAM_PORT_A",
+          "bram_prim_1/BRAM_PORT_A"
+        ]
+      },
+      "bram_controller_2_BRAM_PORT_A": {
+        "interface_ports": [
+          "bram_gpio_0/BRAM_PORT_A",
+          "bram_controller_2/BRAM_PORT_A"
+        ]
+      },
+      "cpu_top_0_DCCM_LMB_M": {
+        "interface_ports": [
+          "lmb_mux_0/S_LMB_PORT",
+          "cpu_top_0/DCCM_LMB_M"
+        ]
+      },
+      "cpu_top_0_ICCM_LMB_M": {
+        "interface_ports": [
+          "cpu_top_0/ICCM_LMB_M",
+          "bram_controller_0/S_LMB_PORT"
+        ]
+      },
+      "lmb_mux_0_M_LMB_PORT_A": {
+        "interface_ports": [
+          "bram_controller_1/S_LMB_PORT",
+          "lmb_mux_0/M_LMB_PORT_A"
+        ]
+      },
+      "lmb_mux_0_M_LMB_PORT_B": {
+        "interface_ports": [
+          "bram_controller_2/S_LMB_PORT",
+          "lmb_mux_0/M_LMB_PORT_B"
+        ]
+      }
+    },
+    "nets": {
+      "bram_gpio_0_gpio_o": {
+        "ports": [
+          "bram_gpio_0/gpio_o",
+          "gpio_o"
+        ]
+      },
+      "clk_i_0_1": {
+        "ports": [
+          "clk_i",
+          "cpu_top_0/clk_i",
+          "bram_gpio_0/clk_i",
+          "bram_controller_0/clk_i",
+          "bram_controller_1/clk_i",
+          "bram_controller_2/clk_i",
+          "lmb_mux_0/clk_i"
+        ]
+      },
+      "gpio_i_0_1": {
+        "ports": [
+          "gpio_i",
+          "bram_gpio_0/gpio_i"
+        ]
+      },
+      "resetn_i_0_1": {
+        "ports": [
+          "resetn_i",
+          "cpu_top_0/resetn_i",
+          "bram_gpio_0/resetn_i",
+          "bram_controller_0/resetn_i",
+          "bram_controller_1/resetn_i",
+          "bram_controller_2/resetn_i",
+          "lmb_mux_0/resetn_i"
+        ]
+      },
+      "run_req_i_0_1": {
+        "ports": [
+          "run_req_i",
+          "cpu_top_0/run_req_i"
+        ]
+      }
+    }
+  }
+}

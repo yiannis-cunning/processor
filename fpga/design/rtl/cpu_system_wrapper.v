@@ -33,7 +33,7 @@ module cpu_system_wrapper
   );
 
 
-  design_1_wrapper cpu_block_design
+  design_v2_wrapper cpu_block_design
        (.clk_i(sys_clk),
         .gpio_i(gpio_i),
         .gpio_o(gpio_o),

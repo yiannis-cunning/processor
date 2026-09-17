@@ -2,24 +2,25 @@
 `include "fpga_mem_map.svh"
 
 
-package main_seq_pkg;
+package fpga_seq_pkg;
 
-    class main_seq;
-        virtual fpga_seq vif;
+    class fpga_seq;
+        virtual fpga_if vif;
 
-        function new(virtual fpga_seq vifi);
+        function new(virtual fpga_if vifi);
             this.vif = vifi;
         endfunction
 
 
         task automatic reset_cpu();
+            vif.switches = 2'b0;
 
             vif.resetn = 1'b0;
-            vif.run_req_i = 1'b0;
+            vif.run_req = 1'b0;
             repeat(3) @(posedge vif.clk);
             vif.resetn = 1'b1;
             repeat(2) @(posedge vif.clk);
-            vif.run_req_i = 1'b1;
+            vif.run_req = 1'b1;
 
         endtask
 
@@ -30,16 +31,31 @@ package main_seq_pkg;
 
         endtask
 
+        task automatic toggle_switches();
+            fork
+                vif.switches = 2'b0;
+                forever begin
+                    repeat(50) @(posedge vif.clk);
+                    vif.switches = vif.switches + 1;
+                end
+
+            join_none // start sub-process
+        endtask 
+
 
         task automatic run();
+            reset_cpu();
+            
+            toggle_switches();
+
             fork
                 begin
-                    wait(cpu_vif.instr_raddr_o == `PROGRAM_DONE_ADDRESS);
+                    wait(vif.instr_raddr == `PROGRAM_DONE_ADDRESS);
                     $display("PC Reached end loop.");
                     pmem();
                 end
                 begin
-                    #200us;
+                    #20us;
                     $error("Test timeout after at time %d ns", $realtime);
                 end
             join_any

@@ -8,8 +8,8 @@ module lmb_mux #(
     parameter PORTB_ADDR_HIGH = 0
     
     ) (
-    //input wire clk_i,
-    //input wire resetn_i,
+    input wire clk_i,
+    input wire resetn_i,
 
     (* X_INTERFACE_INFO = "xilinx.com:interface:lmb:1.0 S_LMB_PORT ABUS" *)
     input wire [31:0]       addr_i,
@@ -56,10 +56,22 @@ module lmb_mux #(
     );
 
 
+
+    reg [31:0] raddr_d1r;
+    always @(posedge clk_i or negedge resetn_i) begin
+        if(~resetn_i) begin
+            raddr_d1r <= 32'd0;
+        end else begin
+            if(rd_en_i) begin
+                raddr_d1r <= addr_i;
+            end
+        end
+    end
+
     always @(*) begin
-        if( (addr_i >= PORTA_ADDR_BASE) & (addr_i >= PORTA_ADDR_HIGH) ) begin
+        if( (raddr_d1r >= PORTA_ADDR_BASE) & (raddr_d1r < PORTA_ADDR_HIGH) ) begin
             rdata_o = dccm_rdata_a_i;
-        end else if ( (addr_i >= PORTB_ADDR_BASE) & (addr_i >= PORTB_ADDR_HIGH) ) begin
+        end else if ( (raddr_d1r >= PORTB_ADDR_BASE) & (raddr_d1r < PORTB_ADDR_HIGH) ) begin
             rdata_o = dccm_rdata_b_i;
         end else begin
             rdata_o = dccm_rdata_a_i;

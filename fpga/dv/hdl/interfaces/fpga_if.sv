@@ -5,6 +5,7 @@ interface fpga_if ();
     logic resetn;
     logic clk;
     logic run_req;
+    logic [1:0] switches;
     logic [31:0] instr_raddr;
 
     logic [31:0] iccm_mem_r [(`ICCM_SIZE_B >> 2) - 1: 0];

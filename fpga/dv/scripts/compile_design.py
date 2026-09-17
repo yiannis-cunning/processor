@@ -14,6 +14,29 @@ def get_files(dir_path, expr):
             ans.append(os.path.join(dir_path, f))
     return ans
 
+# export_simulation -of_objects [get_files C:/Users/yiann/Desktop/gits/processor/fpga/design/blocks/design_1/design_1.bd] -directory C:/Users/yiann/Desktop/vivado_prj/ver2023/processor_v1/processor_v1.ip_user_files/sim_scripts -ip_user_files_dir C:/Users/yiann/Desktop/vivado_prj/ver2023/processor_v1/processor_v1.ip_user_files -ipstatic_source_dir C:/Users/yiann/Desktop/vivado_prj/ver2023/processor_v1/processor_v1.ip_user_files/ipstatic -lib_map_path [list {modelsim=C:/Users/yiann/Desktop/vivado_prj/ver2023/processor_v1/processor_v1.cache/compile_simlib/modelsim} {questa=C:/Users/yiann/Desktop/vivado_prj/ver2023/processor_v1/processor_v1.cache/compile_simlib/questa} {riviera=C:/Users/yiann/Desktop/vivado_prj/ver2023/processor_v1/processor_v1.cache/compile_simlib/riviera} {activehdl=C:/Users/yiann/Desktop/vivado_prj/ver2023/processor_v1/processor_v1.cache/compile_simlib/activehdl}] -use_ip_compiled_libs -force -quiet
+
+def get_bd_sim_srcs(bd_dir, bd_name):
+    bd_dir = bd_dir + "/" + bd_name
+    flist = ""
+
+    flist += f" {bd_dir}/sim/{bd_name}.v "          # BD veriliog: <name>/sim/<name>.v
+    flist += f" {bd_dir}/hdl/{bd_name}_wrapper.v "  # HDL wrapper: <name>/hdl/<name>_wrapper.v
+
+    for subip in os.listdir(f"{bd_dir}/ip/"):
+        flist += f" {bd_dir}/ip/{subip}/sim/{subip}.v "
+
+    #for subip in os.listdir(f"{bd_dir}/ipshared/"):
+    #    for f in get_files(f"{bd_dir}/ipshared/{subip}/simulation/", ".*"):
+    #        flist += " " + f + " "
+
+    # All instances:
+    # for ip in <name>/ip/
+    #   wrapper = <name>/ip/<ipname>/sim/<ipname>.v
+    #   actual verilog: from design sources for own files. Else prov from vivado install dir.
+
+    return flist
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Convert text to html')
@@ -36,9 +59,12 @@ if __name__ == "__main__":
     vivado_dir      = VIVADO_BIN_PATH
     cpu_rtl_dir     = ROOT + "/cpu/design/rtl/"
     fpga_rtl_dir    = ROOT + "/fpga/design/rtl/"
+    bd_name         = "design_v2"
+    blocks_dir      = ROOT + "/fpga/design/blocks/"
+
     tb_dir          = ROOT + "/fpga/dv/hdl/"
-    scripts_dir     = ROOT + "/fpga/dv/scripts/"
-    c_tests_dir     = ROOT + "/cpu/dv/c_tests/"
+    cpu_scripts_dir     = ROOT + "/cpu/dv/scripts/"
+    c_tests_dir     = ROOT + "/fpga/dv/c_src/"
 
 
     tests           = "addi_slti 1 branch call compare const load_store logic_imm logic_reg sanity shift_imm shift_reg".split(" ")
@@ -92,8 +118,8 @@ if __name__ == "__main__":
     # Vivado primitives
     compile_command += " /home/cunningy/Desktop/Xilinx/Vivado/2023.2/data/verilog/src/unisims/IBUFDS.v "
 
-    # Block design files
-    
+    # Block design files: hdl wrapper, block design.v, all vivado sub-ip instances
+    compile_command += get_bd_sim_srcs(blocks_dir, bd_name)
 
     compile_command += f" --include {tb_dir}/include/ "
 
@@ -148,13 +174,14 @@ if __name__ == "__main__":
         os.chdir(f"{output_dir}/test{i}")
         os.symlink(f"{output_dir}/build/xsim.dir", f"{output_dir}/test{i}/xsim.dir")
 
-        shutil.copy(f"{c_tests_dir}/build/rom.hex", ".")
-        shutil.copy(f"{c_tests_dir}/build/{testname}/{testname}_iccm.hex", "./iccm.hex")
-        shutil.copy(f"{c_tests_dir}/build/{testname}/{testname}_dccm.hex", "./dccm.hex")
+        shutil.copy(f"{c_tests_dir}/build/main_iccm.hex", "./iccm.hex")
+        shutil.copy(f"{c_tests_dir}/build/main_dccm.hex", "./dccm.hex")
+
+
         #shutil.copy(f"{c_tests_dir}/build/{testname}/{testname}_x86.out", "./exp.out")
-        x86_out = open(f"{c_tests_dir}/build/{testname}/{testname}_x86.out").read()
-        open("exp.out", "w").write(x86_out.replace("-", "\n") + "\n")
-        os.symlink(f"{c_tests_dir}/build/{testname}/", f"./test_src")
+        #x86_out = open(f"{c_tests_dir}/build/{testname}/{testname}_x86.out").read()
+        #open("exp.out", "w").write(x86_out.replace("-", "\n") + "\n")
+        #os.symlink(f"{c_tests_dir}/build/{testname}/", f"./test_src")
 
 
         sim_command = f"{vivado_dir}/xsim {worklib_name}.{top_module}"
@@ -162,7 +189,7 @@ if __name__ == "__main__":
 
         sim_command_waves = sim_command
         sim_command_waves += f" --wdb ./test{i}.wdb"
-        sim_command_waves += f" --t {scripts_dir}/xsim_run.tcl "
+        sim_command_waves += f" --t {cpu_scripts_dir}/xsim_run.tcl "
         open(f"{output_dir}/test{i}/open_waves.tcl", 'w').write(f"open_wave_database {output_dir}/test{i}/test{i}.wdb\n")
         open(f"{output_dir}/test{i}/open_waves.sh", 'w').write(f"{vivado_dir}/xsim {worklib_name}.{top_module} -gui --t {output_dir}/test{i}/open_waves.tcl\n")
         os.chmod(f"{output_dir}/test{i}/open_waves.sh", 0o777)   # rwxrwxrwx
@@ -192,8 +219,8 @@ if __name__ == "__main__":
         if(open("simulate.log").read().find("\nError: ") != -1):
             result = "failed"
 
-        if( subprocess.run(f"diff ./dccm_done.hex ./exp.out", shell=True, text=True, capture_output=True).stdout != ""):
-            result = "failed"
+        #if( subprocess.run(f"diff ./dccm_done.hex ./exp.out", shell=True, text=True, capture_output=True).stdout != ""):
+        #    result = "failed"
 
         open("result.txt", "w").write(result + "\n")
         print(f"Test {i}: {result}")

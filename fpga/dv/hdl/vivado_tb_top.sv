@@ -21,6 +21,8 @@
 
 `include "fpga_mem_map.svh"
 
+import fpga_seq_pkg::*;
+
 module vivado_tb_top(
 
     );
@@ -34,15 +36,15 @@ module vivado_tb_top(
         .sys_clk_p(fpga_sigs.clk),
         .sys_clk_n(~fpga_sigs.clk),
         .led(),
-        .key_in(2'b0),
+        .key_in(fpga_sigs.switches),
         .resetn_i(fpga_sigs.resetn),
         .run_req_i(fpga_sigs.run_req)
     );
 
     initial forever #5ns clk_r = ~clk_r;  // 100 MHz
 
-    assign fpga_sigs.clk_i = clk_r;
-    assign fpga_sigs.instr_raddr = I_dut.pipeline_top.instr_raddr_o;
+    assign fpga_sigs.clk = clk_r;
+    assign fpga_sigs.instr_raddr = pipeline_top.instr_raddr_o;
 
     initial begin
         seq = new(fpga_sigs);

@@ -42,12 +42,20 @@ module bram_gpio #(
                 bram_rdata_o <= gpio_i;
 
                 // Write GPIO
-                for(integer i = 0; i < 4; i = i + 1) begin
-                    if(bram_byte_wr_en_i[i]) begin
-                        gpio_o[8*i +: 8] <= bram_wdata_i[8*i +: 8];
-                    end
+                if(bram_byte_wr_en_i[0]) begin
+                    gpio_o[7:0] <= bram_wdata_i[7:0];
                 end
-                
+                if(bram_byte_wr_en_i[1]) begin
+                    gpio_o[15:8] <= bram_wdata_i[15:8];
+                end
+                if(bram_byte_wr_en_i[2]) begin
+                    gpio_o[23:16] <= bram_wdata_i[23:16];
+                end
+                if(bram_byte_wr_en_i[3]) begin
+                    gpio_o[31:24] <= bram_wdata_i[31:24];
+                end
+
+    
             end
         end
     end
