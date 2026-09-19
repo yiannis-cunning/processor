@@ -10,8 +10,8 @@ create_clock -period 5.000 [get_ports sys_clk_p]
 set_property PACKAGE_PIN R4 [get_ports sys_clk_p]
 set_property IOSTANDARD DIFF_SSTL15 [get_ports sys_clk_p]
 ############## reset define#######################
-set_property PACKAGE_PIN T6 [get_ports rst_n]
-set_property IOSTANDARD LVCMOS15 [get_ports rst_n]
+set_property PACKAGE_PIN T6 [get_ports resetn_i]
+set_property IOSTANDARD LVCMOS15 [get_ports resetn_i]
 ##############LED define##########################
 set_property PACKAGE_PIN B13 [get_ports {led[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {led[0]}]

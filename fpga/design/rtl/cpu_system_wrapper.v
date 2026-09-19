@@ -5,8 +5,7 @@ module cpu_system_wrapper
     sys_clk_n,
     led,
     key_in,
-    resetn_i,
-    run_req_i);
+    resetn_i);
     
   // Manual led/sw connections
   output wire [3:0] led;
@@ -15,7 +14,6 @@ module cpu_system_wrapper
   wire [31:0]gpio_o;
   
   input wire resetn_i;
-  input wire run_req_i;
   input wire sys_clk_n;
   input wire sys_clk_p;
   
@@ -38,5 +36,5 @@ module cpu_system_wrapper
         .gpio_i(gpio_i),
         .gpio_o(gpio_o),
         .resetn_i(resetn_i),
-        .run_req_i(run_req_i));
+        .run_req_i(1'b1));
 endmodule
