@@ -1,0 +1,1 @@
+$VIVADO_BIN_PATH/vivado -mode tcl -source $ROOT/fpga/design/vivado.tcl

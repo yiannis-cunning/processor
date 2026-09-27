@@ -7,6 +7,7 @@ set_property CONFIG_MODE SPIx4 [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design]
 ############## clock define#######################
 create_clock -period 5.000 [get_ports sys_clk_p]
+create_clock -period 10.000 [get_nets newclk]
 set_property PACKAGE_PIN R4 [get_ports sys_clk_p]
 set_property IOSTANDARD DIFF_SSTL15 [get_ports sys_clk_p]
 ############## reset define#######################

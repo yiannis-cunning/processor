@@ -37,8 +37,8 @@ module vivado_tb_top(
         .sys_clk_n(~fpga_sigs.clk),
         .led(),
         .key_in(fpga_sigs.switches),
-        .resetn_i(fpga_sigs.resetn),
-        .run_req_i(fpga_sigs.run_req)
+        .resetn_i(fpga_sigs.resetn)
+        //.run_req_i(fpga_sigs.run_req)
     );
 
     initial forever #5ns clk_r = ~clk_r;  // 100 MHz
@@ -52,5 +52,6 @@ module vivado_tb_top(
         $finish;
     end
 
+    glbl glbl();
     
 endmodule

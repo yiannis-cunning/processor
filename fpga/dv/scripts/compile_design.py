@@ -21,7 +21,7 @@ def get_bd_sim_srcs(bd_dir, bd_name):
     flist = ""
 
     flist += f" {bd_dir}/sim/{bd_name}.v "          # BD veriliog: <name>/sim/<name>.v
-    flist += f" {bd_dir}/hdl/{bd_name}_wrapper.v "  # HDL wrapper: <name>/hdl/<name>_wrapper.v
+    #flist += f" {bd_dir}/hdl/{bd_name}_wrapper.v "  # HDL wrapper: <name>/hdl/<name>_wrapper.v
 
     for subip in os.listdir(f"{bd_dir}/ip/"):
         flist += f" {bd_dir}/ip/{subip}/sim/{subip}.v "
@@ -48,22 +48,23 @@ if __name__ == "__main__":
     #parser.add_argument('-v', '--verbose', action='store_true')        # on/off flag
     args = parser.parse_args()
 
-    # Check root is set
+    # Get system env's
     ROOT = os.environ.get('ROOT')
+    VIVADO_PATH = os.environ.get('VIVADO_PATH')
+    
     assert ROOT, "ERROR: ROOT varaiable must be set"
-    VIVADO_BIN_PATH = os.environ.get('VIVADO_BIN_PATH')
-    assert VIVADO_BIN_PATH, "ERROR: VIVADO_BIN_PATH varaiable must be set"
+    assert VIVADO_PATH, "ERROR: VIVADO_PATH varaiable must be set"
 
 
     # Setup search paths
-    vivado_dir      = VIVADO_BIN_PATH
+    vivado_dir      = f"{VIVADO_PATH}/bin"
     cpu_rtl_dir     = ROOT + "/cpu/design/rtl/"
     fpga_rtl_dir    = ROOT + "/fpga/design/rtl/"
-    bd_name         = "design_v2"
-    blocks_dir      = ROOT + "/fpga/design/blocks/"
+    bd_name         = "bd_core"
+    blocks_dir      = ROOT + "/vivado_prj/"
 
     tb_dir          = ROOT + "/fpga/dv/hdl/"
-    cpu_scripts_dir     = ROOT + "/cpu/dv/scripts/"
+    cpu_scripts_dir = ROOT + "/cpu/dv/scripts/"
     c_tests_dir     = ROOT + "/fpga/dv/c_src/"
 
 
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     os.mkdir(outdir)
     print(f"Making output directory: {outdir}"); 
     os.chdir(outdir)
-    output_dir = os.getcwd()
+    output_dir = os.getcwd().replace("\\", "/") # For windows...
     os.mkdir("build")
     os.chdir("build")
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     for f in get_files(tb_dir + "/seq/", ".*\\.sv"):
         compile_command += f + " " 
 
-    for f in get_files(tb_dir, ".*\.sv"):
+    for f in get_files(tb_dir, ".*\\.sv"):
         compile_command += f + " " 
 
     # CPU RTL
@@ -116,7 +117,9 @@ if __name__ == "__main__":
         compile_command += f + " " 
     
     # Vivado primitives
-    compile_command += " /home/cunningy/Desktop/Xilinx/Vivado/2023.2/data/verilog/src/unisims/IBUFDS.v "
+    compile_command += f" {VIVADO_PATH}/data/verilog/src/glbl.v "
+    compile_command += f" {VIVADO_PATH}/data/verilog/src/unisims/IBUFDS.v "
+    compile_command += f" {VIVADO_PATH}/data/verilog/src/unisims/BUFGCE.v "
 
     # Block design files: hdl wrapper, block design.v, all vivado sub-ip instances
     compile_command += get_bd_sim_srcs(blocks_dir, bd_name)
@@ -136,7 +139,7 @@ if __name__ == "__main__":
     assert result.returncode == 0, f"ERROR: xvlog compilation failed. Please check {output_dir}/build/compile.log"
 
     # Make xelab command
-    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale '1ns/1ps' -debug typical" 
+    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale \"1ns/1ps\" -debug typical"
     elab_command = elab_command + f" --log {output_dir}/build/elaborate.log "
     # print(elab_command)
     # execute elab Command
@@ -148,6 +151,7 @@ if __name__ == "__main__":
         text=True
     )
     print(result)
+    print(elab_command)
     assert result.returncode == 0, f"ERROR: velab elaboration failed. Please check {output_dir}/build/elaborate.log"
 
 
@@ -172,10 +176,14 @@ if __name__ == "__main__":
         testname = f"test_{testname}"
         os.mkdir(f"{output_dir}/test{i}")
         os.chdir(f"{output_dir}/test{i}")
-        os.symlink(f"{output_dir}/build/xsim.dir", f"{output_dir}/test{i}/xsim.dir")
 
-        shutil.copy(f"{c_tests_dir}/build/main_iccm.hex", "./iccm.hex")
-        shutil.copy(f"{c_tests_dir}/build/main_dccm.hex", "./dccm.hex")
+        if os.name == "nt": # os.symlink only works in windows developer mode...
+            subprocess.run(f"cmd /c mklink /J \"{output_dir}//test{i}//xsim.dir\" \"{output_dir}//build//xsim.dir\" ", shell=True, text=True, check=True, capture_output=True)
+        else:
+            os.symlink(f"{output_dir}/build/xsim.dir", f"{output_dir}/test{i}/xsim.dir")
+
+        shutil.copy(f"{c_tests_dir}/build/main_iccm.hex", "./iccm.mem")
+        shutil.copy(f"{c_tests_dir}/build/main_dccm.hex", "./dccm.mem")
 
 
         #shutil.copy(f"{c_tests_dir}/build/{testname}/{testname}_x86.out", "./exp.out")
