@@ -68,8 +68,8 @@ if {[string equal [get_filesets -quiet constrs_1] ""]} {
 add_files -norecurse -fileset sources_1 ${ws_root}/cpu/design/rtl/ 
 add_files -norecurse -fileset sources_1 ${ws_root}/fpga/design/rtl/
 add_files -norecurse -fileset sources_1 ${ws_root}/fpga/design/constraints/
-add_files -norecurse -fileset sources_1 ${ws_root}/fpga/design/fw/dccm.hex
-add_files -norecurse -fileset sources_1 ${ws_root}/fpga/design/fw/iccm.hex
+add_files -norecurse -fileset sources_1 ${ws_root}/fpga/design/fw/dccm.mem
+add_files -norecurse -fileset sources_1 ${ws_root}/fpga/design/fw/iccm.mem
 add_files -fileset constrs_1 -norecurse ${ws_root}/fpga/design/constraints/cpu.xdc
 
 
@@ -121,7 +121,7 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.ADDR_WIDTH {13} \
-    CONFIG.MEM_INIT_FILENAME {iccm.hex} \
+    CONFIG.MEM_INIT_FILENAME {iccm.mem} \
   ] $bram_prim_0
 
 
@@ -156,7 +156,7 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.ADDR_WIDTH {13} \
-    CONFIG.MEM_INIT_FILENAME {dccm.hex} \
+    CONFIG.MEM_INIT_FILENAME {dccm.mem} \
   ] $bram_prim_1
 
 
