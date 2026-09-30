@@ -28,10 +28,12 @@ if __name__ == "__main__":
     # Check root is set
     ROOT = os.environ.get('ROOT')
     assert ROOT, "ERROR: ROOT varaiable must be set"
+    VIVADO_PATH = os.environ.get('VIVADO_PATH')
+    assert VIVADO_PATH, "ERROR: VIVADO_PATH varaiable must be set"
 
 
     # Setup search paths
-    vivado_dir = "/home/cunningy/Desktop/Xilinx/Vivado/2023.2/bin/"
+    vivado_dir      = VIVADO_PATH + "/bin/"
     rtl_dir         = ROOT + "/cpu/design/rtl/"
     tb_dir          = ROOT + "/cpu/dv/hdl/"
     scripts_dir     = ROOT + "/cpu/dv/scripts/"
@@ -56,7 +58,10 @@ if __name__ == "__main__":
     os.mkdir(outdir)
     print(f"Making output directory: {outdir}"); 
     os.chdir(outdir)
-    output_dir = os.getcwd()
+    if os.name == "nt":
+        output_dir = os.getcwd().replace("\\", "/")
+    else:
+        output_dir = os.getcwd()
     os.mkdir("build")
     os.chdir("build")
 
@@ -67,13 +72,13 @@ if __name__ == "__main__":
     compile_command = f"{vivado_dir}/xvlog -work {worklib_name} --sv " 
     compile_command = compile_command + f" --log {output_dir}/build/compile.log "
 
-    for f in get_files(tb_dir + "/seq/", ".*\.sv"):
+    for f in get_files(tb_dir + "/seq/", r".*\.sv"):
         compile_command += f + " " 
 
-    for f in get_files(rtl_dir, ".*\.v"):
+    for f in get_files(rtl_dir, r".*\.v"):
         compile_command += f + " " 
     
-    for f in get_files(tb_dir, ".*\.sv"):
+    for f in get_files(tb_dir, r".*\.sv"):
         compile_command += f + " " 
 
     compile_command += f" --include {tb_dir} "
@@ -94,7 +99,7 @@ if __name__ == "__main__":
         exit(0)
 
     # Make xelab command
-    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale '1ns/1ps' -debug typical" 
+    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale \"1ns/1ps\" -debug typical" 
     elab_command = elab_command + f" --log {output_dir}/build/elaborate.log "
     # print(elab_command)
     # execute elab Command
@@ -126,7 +131,12 @@ if __name__ == "__main__":
         testname = f"test_{testname}"
         os.mkdir(f"{output_dir}/test{i}")
         os.chdir(f"{output_dir}/test{i}")
-        os.symlink(f"{output_dir}/build/xsim.dir", f"{output_dir}/test{i}/xsim.dir")
+
+        if os.name == "nt": # os.symlink only works in windows developer mode...
+            subprocess.run(f"cmd /c mklink /J \"{output_dir}//test{i}//xsim.dir\" \"{output_dir}//build//xsim.dir\" ", shell=True, text=True, check=True, capture_output=True)
+            print(output_dir)
+        else:
+            os.symlink(f"{output_dir}/build/xsim.dir", f"{output_dir}/test{i}/xsim.dir")
 
         shutil.copy(f"{c_tests_dir}/build/rom.hex", ".")
         shutil.copy(f"{c_tests_dir}/build/{testname}/{testname}_iccm.hex", "./iccm.hex")
@@ -134,8 +144,11 @@ if __name__ == "__main__":
         #shutil.copy(f"{c_tests_dir}/build/{testname}/{testname}_x86.out", "./exp.out")
         x86_out = open(f"{c_tests_dir}/build/{testname}/{testname}_x86.out").read()
         open("exp.out", "w").write(x86_out.replace("-", "\n") + "\n")
-        os.symlink(f"{c_tests_dir}/build/{testname}/", f"./test_src")
 
+        if os.name == "nt": # os.symlink only works in windows developer mode...
+            subprocess.run(f"cmd /c mklink /J \".//test_src\" \"{c_tests_dir}//build//{testname}//\" ", shell=True, text=True, check=True, capture_output=True)
+        else:
+            os.symlink(f"{c_tests_dir}/build/{testname}/", f"./test_src")
 
         sim_command = f"{vivado_dir}/xsim {worklib_name}.{top_module}"
         sim_command += f" --log ./simulate.log "
