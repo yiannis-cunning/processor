@@ -62,7 +62,7 @@ module memory(
     end
 
 
-    // Fetch/Decode registers
+    // Memory 1 registers
     always @(posedge clk_i, negedge resetn_i) begin
         if(~resetn_i) begin
             mem1_alu_result_reg     <= 'd0;
@@ -88,7 +88,7 @@ module memory(
     end
 
 
-    // Fetch/Decode registers
+    // Memory 2 registers
     always @(posedge clk_i, negedge resetn_i) begin
         if(~resetn_i) begin
             rd_val_reg_o <= 'd0;

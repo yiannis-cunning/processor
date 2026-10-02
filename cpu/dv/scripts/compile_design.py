@@ -14,6 +14,43 @@ def get_files(dir_path, expr):
             ans.append(os.path.join(dir_path, f))
     return ans
 
+
+
+
+runtest_str = r'''
+import subprocess
+result = subprocess.run(sim_command,
+    shell=True, check=True,
+        stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+    #capture_output=True,
+    text=True
+)
+
+# Check on the result:
+result = "passed"
+
+# Check vivado sim errors
+if(open("simulate.log").read().find("\nError: ") != -1):
+   result = "failed"
+
+if( subprocess.run(f"diff ./dccm_done.hex ./exp.out", shell=True, text=True, capture_output=True).stdout != ""):
+    result = "failed"
+
+open("result.txt", "w").write(result + "\n")
+print(f"Test testnum: {result}")
+
+'''
+
+def run_test(sim_command, testnum):
+
+    p = subprocess.Popen(
+        [sys.executable, "-c", runtest_str.replace("sim_command", '"' + sim_command + '"').replace("testnum", str(testnum))],
+        start_new_session=True,
+    )
+    print(f"Laucned sub-test {testnum} with pid={p.pid}")
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Convert text to html')
@@ -126,6 +163,9 @@ if __name__ == "__main__":
     #   --wdb <wave location> 
     #   --t <tcl file> ++ add log wave command.
 
+
+    # We can parallelize this...
+
     i = 1
     for testname in tests:
         testname = f"test_{testname}"
@@ -170,6 +210,9 @@ if __name__ == "__main__":
         if(args.waves):
             sim_command = sim_command_waves
 
+        run_test(sim_command, i)
+        i += 1
+        continue
         result = subprocess.run(sim_command,
             shell=True, check=True,
             stdout=subprocess.DEVNULL,
