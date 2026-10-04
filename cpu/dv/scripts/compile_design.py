@@ -16,6 +16,27 @@ def get_files(dir_path, expr):
 
 
 
+uvm_report_regex = r'''\*\* Report counts by severity\s*
+UVM_INFO \s*:\s*(\d+)\s*
+UVM_WARNING \s*:\s*(\d+)\s*
+UVM_ERROR \s*:\s*(\d+)\s*
+UVM_FATAL \s*:\s*(\d+)\s*
+'''
+
+def read_uvm_results(logfile):
+    x = re.search(uvm_report_regex, logfile)
+    if(not x):
+        return "failed"
+    d = []
+    d["UVM_INFO"] = x.group(1)
+    d["UVM_WARNING"] = x.group(2)
+    d["UVM_ERROR"] = x.group(3)
+    d["UVM_FATAL"] = x.group(4)
+
+    return d["UVM_FATAL"] > 0 or d["UVM_ERROR"] > 0
+
+
+
 
 runtest_str = r'''
 import subprocess
@@ -234,8 +255,7 @@ if __name__ == "__main__":
         result = "passed"
 
         # Check vivado sim errors
-        if(open("simulate.log").read().find("\nError: ") != -1):
-            result = "failed"
+        result = read_uvm_results(open("simulate.log").read())
 
         if( subprocess.run(f"diff ./dccm_done.hex ./exp.out", shell=True, text=True, capture_output=True).stdout != ""):
             result = "failed"

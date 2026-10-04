@@ -20,6 +20,14 @@ class mem_model extends uvm_object;
         foreach (tmp[i]) if (!$isunknown(tmp[i])) mem[(base >> 2) + i] = tmp[i];
     endfunction
 
+    function void save(string file, bit [31:0] base, int unsigned n_words);
+        logic [31:0] tmp[];
+        tmp = new[n_words];
+        foreach (tmp[i]) tmp[i] = read(base + 4*i);
+        $writememh(file, tmp);
+    endfunction
+
+
     function bit [31:0] read(bit [31:0] addr);
         bit [29:0] idx = addr[31:2];
         if (addr[1:0] != 0) `uvm_error("MEM", $sformatf("Unaligned read @%08h", addr))

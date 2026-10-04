@@ -25,7 +25,9 @@ module execute(
 
     // Back to PC input
     output wire         branch_enable,
-    output wire [31:0]  branch_dest
+    output wire [31:0]  branch_dest,
+
+    input wire          exec_stall_en_i
 
 
 
@@ -62,11 +64,15 @@ module execute(
             control_bits_reg_o  <= 'd0;
             pc_p4_reg_o         <= 'd0;
         end else begin
-            alu_res_reg_o       <= alu_res_nxt;
-            rs2_val_reg_o       <= rs2_val_reg_i;
-            control_bits_reg_o  <= (flush_en) ?  ('d0) : (control_bits_reg_i[`NUM_CONTROL_BITS - 1:0]); // Should not flush here ??? JAL
-            rd_addr_reg_o       <= rd_addr_reg_i;
-            pc_p4_reg_o         <= pc_p4_reg_i;
+            if(exec_stall_en_i) begin
+                // Stay the same...
+            end else begin
+                alu_res_reg_o       <= alu_res_nxt;
+                rs2_val_reg_o       <= rs2_val_reg_i;
+                control_bits_reg_o  <= (flush_en) ?  ('d0) : (control_bits_reg_i[`NUM_CONTROL_BITS - 1:0]); // Should not flush here ??? JAL
+                rd_addr_reg_o       <= rd_addr_reg_i;
+                pc_p4_reg_o         <= pc_p4_reg_i;
+            end
         end
     end
 

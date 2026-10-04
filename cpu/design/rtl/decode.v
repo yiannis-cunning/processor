@@ -33,8 +33,9 @@ module decode(
 
     // To HDU
     output reg [4:0]    rs1_addr_used,
-    output reg [4:0]    rs2_addr_used
+    output reg [4:0]    rs2_addr_used,
 
+    input wire          dec_stall_en_i
 
 );
 
@@ -167,15 +168,27 @@ module decode(
             br_dest_reg_o       <= 'd0;
             immd_val_reg_o      <= 'd0;
         end else begin
-            // {wb_en, mw_en, mr_en, alu_op[3:0]}
-            control_bits_reg_o[14:0]  <= (flush_enable_i) ? ('d0) : (lut_rd);
+            if(dec_stall_en_i) begin
+                control_bits_reg_o  <= control_bits_reg_o;
+                rs1_val_reg_o       <= rs1_val_reg_o;
+                rs2_val_reg_o       <= rs2_val_reg_o;
+                rd_addr_reg_o       <= rd_addr_reg_o;
+                pc_p4_reg_o         <= pc_p4_reg_o;
+                br_dest_reg_o       <= br_dest_reg_o;
+                immd_val_reg_o      <= immd_val_reg_o;
+            end else if(flush_enable_i) begin
+                control_bits_reg_o[14:0]  <= 'd0;
+            end else begin
+                // {wb_en, mw_en, mr_en, alu_op[3:0]}
+                control_bits_reg_o[14:0]  <= lut_rd;
 
-            rs1_val_reg_o       <= rs1_val;
-            rs2_val_reg_o       <= rs2_val;
-            rd_addr_reg_o       <= instr_reg_i[11:7];
-            pc_p4_reg_o         <= pc_p4_reg_i;
-            br_dest_reg_o       <= pc_p4_reg_i - 32'd4 + immd_val_nxt;
-            immd_val_reg_o      <= immd_val_nxt;
+                rs1_val_reg_o       <= rs1_val;
+                rs2_val_reg_o       <= rs2_val;
+                rd_addr_reg_o       <= instr_reg_i[11:7];
+                pc_p4_reg_o         <= pc_p4_reg_i;
+                br_dest_reg_o       <= pc_p4_reg_i - 32'd4 + immd_val_nxt;
+                immd_val_reg_o      <= immd_val_nxt;
+            end
         end
     end
 

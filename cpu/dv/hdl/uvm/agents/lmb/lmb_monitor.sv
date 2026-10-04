@@ -16,4 +16,9 @@ class lmb_monitor extends uvm_monitor;
     function void connect_phase(uvm_phase phase);
 
     endfunction
+
+    task run_phase(uvm_phase phase);
+
+
+    endtask
 endclass

@@ -17,14 +17,15 @@ module pipeline_top(
     input wire              instr_rd_wait_i,
     input wire              instr_rd_ready_i,
 
-    // Data mem R/W Interface
-    output wire [31:0] data_rd_addr_o,
-    input  wire [31:0] data_rd_data_i,
-    output wire        data_rd_en_o,
-    output wire [31:0] data_wr_addr_o,
-    output wire [31:0] data_wr_data_o,
-    output wire [3:0]  data_mem_strb_en_o,
-    output wire        data_wr_en_o
+    // Data memory interface
+    output wire [31:0]  mem_addr_o,
+    input wire [31:0]   mem_rdata_i,
+    output wire [31:0]  mem_wdata_o,
+    output reg [3:0]    mem_strb_en_o,
+    output wire         mem_rd_en_o,
+    output wire         mem_wr_en_o,
+    input wire          mem_ready_i,
+    input wire          mem_wait_i
 
 );
 
@@ -52,6 +53,8 @@ module pipeline_top(
     wire [4:0] hdu_rs2_addr_used;
     wire       hazard_detected_int;
 
+    wire       bef_mem1_stall_en;
+
     // Execute -> Memory interface
     wire [14:0]  execute_memory_control_bits_int;
     wire [31:0] execute_memory_alu_res_int;
@@ -77,7 +80,7 @@ module pipeline_top(
         .clk_i(clk_i),
         .resetn_i(resetn_i),
         .run_req_i(run_req_i),
-        .stall_enable_i(hazard_detected_int),
+        .stall_enable_i(hazard_detected_int | bef_mem1_stall_en),
 
         .instr_raddr_o(instr_raddr_o),
         .instr_rdata_i(instr_data_i),
@@ -123,7 +126,9 @@ module pipeline_top(
 
         // To Hazard detection unit
         .rs1_addr_used(hdu_rs1_addr_used),
-        .rs2_addr_used(hdu_rs2_addr_used)
+        .rs2_addr_used(hdu_rs2_addr_used),
+
+        .dec_stall_en_i(bef_mem1_stall_en)
     );
 
 
@@ -150,7 +155,9 @@ module pipeline_top(
 
         // To fetch
         .branch_enable(execute_branch_enable_int),
-        .branch_dest(execute_decode_pc_dest_int)
+        .branch_dest(execute_decode_pc_dest_int),
+
+        .exec_stall_en_i(bef_mem1_stall_en)
     );
 
     memory I_memory (
@@ -158,13 +165,16 @@ module pipeline_top(
         .clk_i(clk_i),
 
         // Data memory interface
-        .rd_addr_o(data_rd_addr_o),
-        .rd_data_i(data_rd_data_i),
-        .rd_en_o(data_rd_en_o),
-        .wr_addr_o(data_wr_addr_o),
-        .wr_data_o(data_wr_data_o),
-        .mem_strb_en_o(data_mem_strb_en_o),
-        .wr_en_o(data_wr_en_o),
+        .mem_addr_o(mem_addr_o),
+        .mem_rdata_i(mem_rdata_i),
+        .mem_rd_en_o(mem_rd_en_o),
+        .mem_wdata_o(mem_wdata_o),
+        .mem_strb_en_o(mem_strb_en_o),
+        .mem_wr_en_o(mem_wr_en_o),
+        .mem_ready_i(mem_ready_i),
+        .mem_wait_i(mem_wait_i),
+
+        .mem1_stall_en(bef_mem1_stall_en),
 
         // From Execute
         .control_bits_reg_i(execute_memory_control_bits_int),

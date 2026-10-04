@@ -3,12 +3,16 @@ class topseq extends uvm_sequence;
 
   virtual cpu_if      cpu_vif;       // set by the test before start()
   virtual sram_dbg_if dccm_dbg_vif;
+  mem_model           memory;
 
   function new(string name = "topseq");
     super.new(name);
   endfunction
 
   task body();
+    if (!uvm_config_db#(mem_model)::get(null, get_full_name(), "mem_model_if", memory))
+      `uvm_fatal("NOMEM", "mem_model not found")
+
     reset_cpu();
     wait_for_done();
   endtask
@@ -27,7 +31,8 @@ class topseq extends uvm_sequence;
       begin
         wait (cpu_vif.instr_raddr_o == `PROGRAM_DONE_ADDRESS);
         `uvm_info("TOPSEQ", "PC reached end loop", UVM_LOW)
-        $writememh("dccm_done.hex", dccm_dbg_vif.mem_r, 0, `TEST_SIZE_WORDS - 1);
+        memory.save("dccm_done.hex", `DCCM_START_ADDR, `TEST_SIZE_WORDS);
+        //$writememh("dccm_done.hex", dccm_dbg_vif.mem_r, 0, `TEST_SIZE_WORDS - 1);
       end
       begin
         #200us;
