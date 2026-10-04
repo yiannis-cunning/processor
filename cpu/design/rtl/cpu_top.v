@@ -23,6 +23,13 @@ module cpu_top(
     (* X_INTERFACE_INFO = "xilinx.com:interface:lmb:1.0 ICCM_LMB_M BE" *)
     output wire [3:0]       iccm_wr_byte_en_i,
 
+    (* X_INTERFACE_INFO = "xilinx.com:interface:lmb:1.0 ICCM_LMB_M ADDRSTROBE" *)
+    output wire             iccm_addrstrobe, // Address strobe (required)
+    (* X_INTERFACE_INFO = "xilinx.com:interface:lmb:1.0 ICCM_LMB_M READY" *)
+    input wire              iccm_ready_i, // Ready (required)
+    (* X_INTERFACE_INFO = "xilinx.com:interface:lmb:1.0 ICCM_LMB_M WAIT" *)
+    input wire              iccm_wait_i, // Wait (optional)
+
     // Data mem R/W Interface
     (* X_INTERFACE_INFO = "xilinx.com:interface:lmb:1.0 DCCM_LMB_M ABUS" *)
     (* X_INTERFACE_MODE = "Master" *)
@@ -48,6 +55,7 @@ module cpu_top(
     assign iccm_wdata_o = 32'd0;
     assign iccm_wr_en_o = 1'b0;
     assign iccm_wr_byte_en_i = 4'b0;
+    assign iccm_addrstrobe = iccm_rd_en_o;
 
     pipeline_top pipeline (
         .resetn_i(resetn_i),
@@ -58,6 +66,9 @@ module cpu_top(
         .instr_raddr_o(iccm_word_raddr_o),
         .instr_data_i(iccm_data_i),
         .instr_rd_en_o(iccm_rd_en_o),
+        .instr_rd_wait_i(iccm_wait_i),
+        .instr_rd_ready_i(iccm_ready_i),
+        
 
         .data_rd_addr_o(data_rd_addr_int),
         .data_rd_data_i(dccm_rdata_i),

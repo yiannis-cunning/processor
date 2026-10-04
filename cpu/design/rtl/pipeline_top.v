@@ -14,7 +14,8 @@ module pipeline_top(
     output wire [31:0]      instr_raddr_o,
     input wire  [31:0]      instr_data_i,
     output wire             instr_rd_en_o,
-
+    input wire              instr_rd_wait_i,
+    input wire              instr_rd_ready_i,
 
     // Data mem R/W Interface
     output wire [31:0] data_rd_addr_o,
@@ -81,6 +82,8 @@ module pipeline_top(
         .instr_raddr_o(instr_raddr_o),
         .instr_rdata_i(instr_data_i),
         .instr_rd_en_o(instr_rd_en_o),
+        .instr_rd_wait_i(instr_rd_wait_i),
+        .instr_rd_ready_i(instr_rd_ready_i),
         
         // To Decode
         .instr_reg_o(fetch_decode_instr_int),

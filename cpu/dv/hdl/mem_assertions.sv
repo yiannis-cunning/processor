@@ -10,7 +10,7 @@ module mem_assertions();
         end
     end*/
 
-    wire [31:0] instruction = dut.I_fetch.instr_reg_o[31:0];
+    wire [31:0] instruction = dut.pipeline.I_fetch.instr_reg_o[31:0];
     wire resetn = dut.resetn_i;
     wire instr_valid = `COMPARE_ALL_INSTR;
             /*      

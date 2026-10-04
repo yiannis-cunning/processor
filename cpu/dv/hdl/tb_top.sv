@@ -5,6 +5,10 @@
 
 import main_seq_pkg::*;
 
+
+import uvm_pkg::*;
+import cpu_pkg::*;   // so simple_test gets registered with the factory
+
 module tb_top;
 
 
@@ -27,20 +31,56 @@ module tb_top;
 
     cpu_if cpu_sigs();
     assign cpu_sigs.clk = clk_i;
-    assign cpu_sigs.instr_raddr_o = instr_raddr_o;
+    assign cpu_sigs.instr_raddr_o = dut.pipeline.instr_raddr_o;
+
+
+    lmb_if iccm_lmb_if(cpu_sigs.clk, cpu_sigs.resetn);
 
     // -----------------------------
     // DUT Instance
     // -----------------------------
+    cpu_top dut (
+        .resetn_i(cpu_sigs.resetn),
+        .clk_i(clk_i),
+        .run_req_i(cpu_sigs.run_req_i),
+        .done_state(done_state),
+
+        .iccm_word_raddr_o(iccm_lmb_if.lmb_addr),
+        .iccm_wdata_o(iccm_lmb_if.lmb_wdatabus),
+        .iccm_data_i(iccm_lmb_if.lmb_rdatabus),
+        .iccm_wr_en_o(iccm_lmb_if.lmb_writestrobe),
+        .iccm_rd_en_o(iccm_lmb_if.lmb_readstrobe),
+        .iccm_wr_byte_en_i(iccm_lmb_if.lmb_byte_en),
+        .iccm_addrstrobe(iccm_lmb_if.lmb_addrstrobe),
+        .iccm_ready_i(iccm_lmb_if.lmb_ready),
+        .iccm_wait_i(iccm_lmb_if.lmb_wait),
+
+
+        .dccm_addr_o(data_rd_addr_o),
+        .dccm_wdata_o(data_wr_data_o),
+        .dccm_rdata_i(data_rd_data_i),
+        .dccm_wr_en_o(data_wr_en_o),
+        .dccm_rd_en_o(data_rd_en_o),
+        .dccm_wr_byte_en_i(data_mem_strb_en_o)
+
+    );
+    assign data_wr_addr_o = data_rd_addr_o;
+
+    /*
     pipeline_top dut (
         .resetn_i(cpu_sigs.resetn),
         .clk_i(clk_i),
         .run_req_i(cpu_sigs.run_req_i),
         .done_state(done_state),
 
-        .instr_raddr_o(instr_raddr_o),
-        .instr_data_i(instr_data_i),
-        .instr_rd_en_o(instr_rd_en_o),
+        .instr_raddr_o(iccm_lmb_if.lmb_addr),
+        .instr_data_i(iccm_lmb_if.lmb_rdatabus),
+        .instr_rd_en_o(iccm_lmb_if.lmb_addrstrobe),
+        .instr_rd_wait_i(iccm_lmb_if.lmb_wait),
+        .instr_rd_ready_i(iccm_lmb_if.lmb_ready),
+        //.iccm_addrstrobe(),
+        //.iccm_ready_i(1'b1),
+        //.iccm_wait_i(1'b0),
 
         .data_rd_addr_o(data_rd_addr_o),
         .data_rd_data_i(data_rd_data_i),
@@ -51,6 +91,13 @@ module tb_top;
         .data_mem_strb_en_o(data_mem_strb_en_o),
         .data_wr_en_o(data_wr_en_o)
     );
+    always @(*) begin
+        iccm_lmb_if.lmb_wdatabus = 32'd0;
+        iccm_lmb_if.lmb_readstrobe = iccm_lmb_if.lmb_addrstrobe;
+        iccm_lmb_if.lmb_writestrobe = 1'd0;
+        iccm_lmb_if.lmb_byte_en = 4'd0;
+    end*/
+    
 
 
     memory_top I_mem(
@@ -64,6 +111,7 @@ module tb_top;
         .data_rd_addr_i(data_rd_addr_o),
         .data_rd_data_o(data_rd_data_i),
         .data_rd_en_i(data_rd_en_o),
+        
         .data_wr_addr_i(data_wr_addr_o),
         .data_wr_data_i(data_wr_data_o),
         .data_mem_strb_en_i(data_mem_strb_en_o),
@@ -79,8 +127,19 @@ module tb_top;
     assign dbg_if.mem_r = tb_top.I_mem.I_dccm.mem_r;
 
 
-    //bind sram sram_dbg_if dbg_if; // Bind dbg_if into every sram instance
+    initial begin
+        // Allow access to these physical interfaces from uvm_root.uvm_test_top class, by the name given.
 
+        uvm_config_db#(virtual lmb_if)::set(null, "uvm_test_top.env.iccm_lmb_agent*", "vif", iccm_lmb_if);
+        //uvm_config_db#(virtual lmb_if)::set(null, "uvm_test_top.env.dccm_lmb_agent*",  "vif", dccm_if);
+
+
+        uvm_config_db#(virtual cpu_if)::set(null, "uvm_test_top", "cpu_vif", cpu_sigs);
+        uvm_config_db#(virtual sram_dbg_if)::set(null, "uvm_test_top", "dccm_dbg_vif", dbg_if);
+        run_test("simple_test");   // test name from +UVM_TESTNAME=cpu_test on the command line
+    end
+
+    /*
     initial begin
         seq = new(cpu_sigs, dbg_if);
 
@@ -89,9 +148,7 @@ module tb_top;
         
         seq.run();
         $finish;
-
-
-    end
+    end*/
 
     mem_assertions I_mem_assert();
 

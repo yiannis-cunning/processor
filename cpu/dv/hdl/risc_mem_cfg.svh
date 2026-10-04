@@ -1,3 +1,5 @@
+`ifndef RISC_MEM_CFG_SVH
+`define RISC_MEM_CFG_SVH
 
 
 
@@ -39,3 +41,4 @@
 // PC_START_ADDR = 0x100 (RTL)
 
 
+`endif

@@ -106,11 +106,20 @@ if __name__ == "__main__":
     #
     # Make + run compile command
     #
-    compile_command = f"{vivado_dir}/xvlog -work {worklib_name} --sv " 
+    compile_command = f"{vivado_dir}/xvlog -work {worklib_name} --sv -L uvm" 
     compile_command = compile_command + f" --log {output_dir}/build/compile.log "
+
+    for f in get_files(tb_dir + "/interfaces/", r".*\.sv"):
+        compile_command += f + " " 
+
 
     for f in get_files(tb_dir + "/seq/", r".*\.sv"):
         compile_command += f + " " 
+
+    compile_command += tb_dir + "/uvm/cpu_pkg.sv "
+
+    for d in ["", "uvm/cpu_env", "uvm/seq", "uvm/tests", "uvm/agents/lmb"]:
+            compile_command += f" --include {tb_dir}/{d} "
 
     for f in get_files(rtl_dir, r".*\.v"):
         compile_command += f + " " 
@@ -136,7 +145,7 @@ if __name__ == "__main__":
         exit(0)
 
     # Make xelab command
-    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale \"1ns/1ps\" -debug typical" 
+    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale \"1ns/1ps\" -debug typical -L uvm " 
     elab_command = elab_command + f" --log {output_dir}/build/elaborate.log "
     # print(elab_command)
     # execute elab Command
