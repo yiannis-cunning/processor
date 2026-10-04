@@ -1,7 +1,3 @@
-Project sources:
-	- Google doc: <>
-	- GitHub repo: <>
-    - Website <>
 
 
 source setenvs.sh 
