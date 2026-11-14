@@ -24,11 +24,14 @@ def get_bd_sim_srcs(bd_dir, bd_name):
     #flist += f" {bd_dir}/hdl/{bd_name}_wrapper.v "  # HDL wrapper: <name>/hdl/<name>_wrapper.v
 
     for subip in os.listdir(f"{bd_dir}/ip/"):
-        flist += f" {bd_dir}/ip/{subip}/sim/{subip}.v "
+        if(os.path.isfile(f"{bd_dir}/ip/{subip}/sim/{subip}.v")):
+            flist += f" {bd_dir}/ip/{subip}/sim/{subip}.v "
 
-    #for subip in os.listdir(f"{bd_dir}/ipshared/"):
-    #    for f in get_files(f"{bd_dir}/ipshared/{subip}/simulation/", ".*"):
-    #        flist += " " + f + " "
+    for subip in os.listdir(f"{bd_dir}/ipshared/"):
+        if(not os.path.isdir(f"{bd_dir}/ipshared/{subip}/simulation/")):
+            continue
+        for f in get_files(f"{bd_dir}/ipshared/{subip}/simulation/", ".*"):
+            flist += " " + f + " "
 
     # All instances:
     # for ip in <name>/ip/
@@ -138,8 +141,21 @@ if __name__ == "__main__":
     print(f"Using xvlog to compile the design: {result}")
     assert result.returncode == 0, f"ERROR: xvlog compilation failed. Please check {output_dir}/build/compile.log"
 
+
+    # VHDL IP sources (compile before xelab)
+    bd_dir = f"{blocks_dir}/{bd_name}"
+    vhdl_cmds = [
+        # IP core into its own library; the wrapper refers to it as axi_bram_ctrl_v4_1_9
+        f"{vivado_dir}/xvhdl -work axi_bram_ctrl_v4_1_9 {bd_dir}/ipshared/5ed7/hdl/axi_bram_ctrl_v4_1_rfs.vhd --log {output_dir}/build/compile_vhdl_ip.log",
+        # wrapper into the same library as the rest of the design
+        f"{vivado_dir}/xvhdl -work {worklib_name} {bd_dir}/ip/bd_core_axi_bram_ctrl_0_0/sim/bd_core_axi_bram_ctrl_0_0.vhd --log {output_dir}/build/compile_vhdl_wrap.log",
+    ]
+    for cmd in vhdl_cmds:
+        subprocess.run(cmd, shell=True, check=True, text=True)
+
+
     # Make xelab command
-    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale \"1ns/1ps\" -debug typical"
+    elab_command = f"{vivado_dir}/xelab {worklib_name}.{top_module} -timescale \"1ns/1ps\" -debug typical -L axi_bram_ctrl_v4_1_9 "
     elab_command = elab_command + f" --log {output_dir}/build/elaborate.log "
     # print(elab_command)
     # execute elab Command

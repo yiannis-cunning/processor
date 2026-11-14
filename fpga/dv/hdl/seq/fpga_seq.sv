@@ -55,7 +55,7 @@ package fpga_seq_pkg;
                     pmem();
                 end
                 begin
-                    #20us;
+                    #60us;
                     $error("Test timeout after at time %d ns", $realtime);
                 end
             join_any

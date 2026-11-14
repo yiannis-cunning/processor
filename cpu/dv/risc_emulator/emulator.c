@@ -28,6 +28,7 @@ extern char * optarg;
 #define STACK_START_ADDR    0x1000000
 #define MAX_STACK_SIZE      0x100000
 #define PC_QUIT_ADDR        0x100
+#define TRAP_VEC_ADDR       0x1000
 
 #define DEBUG
 #define PRINT_ALL_MEM
@@ -68,10 +69,24 @@ typedef struct memory_t {
     uint32_t mem_size_bytes;
 } memory_t;
 
+
+typedef uint32_t (*csr_access_fn)(uint32_t wdata, bool read_enable, bool write_enable, uint8_t write_type);
+
+typedef struct csr_entry_t{
+    csr_access_fn acess_func;
+    uint32_t value;
+    bool writeable;
+} csr_entry_t;
+
+
 typedef struct risk_core {
-    uint32_t reg[33];
-    uint32_t pc;
+    uint32_t    reg[33];    // + 1 for writes to x0
+    csr_entry_t csrs[4096];
+    uint32_t    operating_mode;
+    uint32_t    pc;
 } risk_core_t;
+
+
 
 
 static memory_t memory = {0};
@@ -81,6 +96,219 @@ static risk_core_t cpu = {0};
 static simargs_t simargs = {0};
 
 
+
+
+typedef union
+{
+    uint32_t raw;
+    struct { // LSB at top
+        uint32_t reserved_0 : 1;
+        uint32_t sie : 1;           // S mode Interupt enable
+        uint32_t reserved_2 : 1;
+        uint32_t mie : 1;           // M mode Interupt enable
+        uint32_t reserved_4 : 1;
+        uint32_t spie : 1;          // S mode previous Interupt enable
+        uint32_t ube : 1;           // U mode endianess (0=little)
+        uint32_t mpie : 1;          // M mode previous Interupt enable
+        uint32_t spp : 1;           // S mode previous privlidege level
+
+        uint32_t vs : 2;            // Vector extension state
+        uint32_t mpp : 2;           // M mode previous privlidege level
+        uint32_t fs : 2;            // FP unit extension state
+        uint32_t xs : 2;            // Other extension state
+        uint32_t mprv : 1;          // Memory Priviledge level
+        uint32_t sum : 1;           // ?
+        uint32_t mxr : 1;           // S mode reg
+        uint32_t tvm : 1;           // Vitulization bits
+        uint32_t tw : 1;            // ^
+        uint32_t tsr : 1;           // ^
+        uint32_t spelp : 1;         // ?
+        uint32_t sdt : 1;           // ?
+        uint32_t reserved_25_30 : 6;
+        uint32_t sd : 1;            // 
+    };
+} mstatus_t;
+
+
+uint32_t acess_mstatus(uint32_t wdata, bool read_enable, bool write_enable, uint8_t write_type){
+
+    mstatus_t mstatus;
+    csr_entry_t *csr = &cpu.csrs[0x300];
+    uint32_t rdata = csr->value;
+    uint32_t newdata = 0;
+
+    if(read_enable){
+        // + Side affects for a read to a particular CSR
+    }
+    if(write_enable){
+        if(write_type == 0){
+            newdata = wdata;            // + side affects for a whole bus write
+        } else if(write_type == 1){
+            newdata = wdata | rdata;    // + side affects for bits which are set
+        } else if(write_type == 2){
+            newdata = (~wdata) & rdata; // + side affects for bits which are cleared
+        } else{
+            passert(false, "Bad CSR access type");
+        }
+        
+        // Make sure new value is valid
+        mstatus.raw = newdata;
+
+        mstatus.reserved_0 = 0;     // WPRI
+        mstatus.reserved_2 = 0;     // WPRI
+        mstatus.reserved_4 = 0;     // WPRI
+        mstatus.reserved_25_30 = 0;     // WPRI
+        mstatus.sie = 0;            // Supervisor interupt enable - read 0, always 0
+        mstatus.spie = 0;           // Supervisor previous Interupt enable, always 0
+        mstatus.spp = 0;            // Supervisor previous priviledge (U or S), always 0
+        //mstatus.mie               // MIE: = R/W, M mode interupt enable
+        //mstatus.mpie              // MPIE: = R/W, M mode previous interupt enable
+        mstatus.mpp = 0;            // Machine previous priviledge (M U or S) = 0, always M/0
+        mstatus.mprv = 0;           // MPRV - Modify Priviledge - =0 (U mode not supported) (access user virutal mem), always 0
+        mstatus.mxr = 0;            // MXR - Read only 0 if no S mode supported
+        mstatus.sum = 0;            // SUM - =0 (S mode not supported)f
+        mstatus.ube = 0;            // UBE - for endianess contronl for data accesses = 0 (U mode not supported)
+        mstatus.tvm = 0;            // Vitulization bits, TVM, TW, TSR = 0 (S mode not supported)
+        mstatus.tw = 0;
+        mstatus.tsr = 0;
+        mstatus.fs = 0;             // FS, VS, XS = 0 (extension state)
+        mstatus.vs = 0;
+        mstatus.xs = 0;
+        mstatus.sd = 0;             // SD = 0 (no extensions)
+        mstatus.sdt = 0;
+        mstatus.spelp = 0;          // S mode previous expected landing pad
+       
+        csr->value = mstatus.raw;
+
+    }
+    return rdata;
+
+    
+}
+
+typedef union
+{
+    uint32_t raw;
+    struct { // LSB at top
+        uint32_t reserved_0_3 : 4;
+        uint32_t sbe : 1;           // S mode endianess
+        uint32_t mbe : 1;           // M mode endianess
+        uint32_t gva : 1;           // Guest virtual access ?
+        uint32_t mpv : 1;           // ?
+        uint32_t reserved_8 : 1;
+        uint32_t mpelp : 1;         // M mode previous expected landing pad
+        uint32_t mdt : 1;           // M mode disable trap
+        uint32_t reserved_11_31 : 21;
+
+    };
+} mstatush_t;
+
+uint32_t acess_mstatush(uint32_t wdata, bool read_enable, bool write_enable, uint8_t write_type){
+
+    mstatush_t mstatush;
+    csr_entry_t *csr = &cpu.csrs[0x310];
+    uint32_t rdata = csr->value;
+    uint32_t newdata = 0;
+
+    if(read_enable){
+        // + Side affects for a read to a particular CSR
+    }
+    if(write_enable){
+        if(write_type == 0){
+            newdata = wdata;            // + side affects for a whole bus write
+        } else if(write_type == 1){
+            newdata = wdata | rdata;    // + side affects for bits which are set
+        } else if(write_type == 2){
+            newdata = (~wdata) & rdata; // + side affects for bits which are cleared
+        } else{
+            passert(false, "Bad CSR access type");
+        }
+        
+        // Make sure new value is valid
+        mstatush.raw = newdata;
+
+        mstatush.reserved_0_3 = 0;
+        mstatush.reserved_11_31 = 0;
+        mstatush.reserved_8 = 0;
+        mstatush.sbe = 0;           // S mode not supported
+        mstatush.mbe = 0;           // M mode endianess = Little endian
+        mstatush.gva = 0;           // Guest virtual access = 0
+        mstatush.mpv = 0;
+        mstatush.mpelp = 0;         //
+        mstatush.mdt = 0;           // We need this?
+       
+        csr->value = mstatush.raw;
+
+    }
+    return rdata;
+
+    
+}
+
+
+#define CSR_MTVEC_ADDR 0x305
+#define CSR_MEDELEG_ADDR 0x302
+#define CSR_MEDELEGH_ADDR 0x312
+
+#define CSR_MIP_ADDR 0x344
+#define CSR_MIE_ADDR 0x304
+
+#define CSR_MCYCLE_ADDR 0xB00
+#define CSR_MCYCLEH_ADDR 0xB80
+
+#define CSR_MINSTRET_ADDR 0xB02
+#define CSR_MINSTRETH_ADDR 0xB82
+
+#define CSR_MSCRATCH_ADDR 0x340
+
+#define CSR_MEPC_ADDR 0x341
+
+void init_csrs(){
+    
+    // misa
+    cpu.csrs[0x301] = (csr_entry_t){NULL, 0x40000100, false};
+    // mvendorid
+    cpu.csrs[0xf11] = (csr_entry_t){NULL, 0x0, false};
+    // marchid
+    cpu.csrs[0xf12] = (csr_entry_t){NULL, 0x0, false};
+    // mimpid
+    cpu.csrs[0xf13] = (csr_entry_t){NULL, 0x0, false};
+    // mhartid
+    cpu.csrs[0xf14] = (csr_entry_t){NULL, 0x0, false};
+    // mstatus
+    mstatus_t mstatus = {0};
+    cpu.csrs[0x300] = (csr_entry_t){acess_mstatus, mstatus.raw, false};
+    // mstatush
+    mstatush_t mstatush = {0};
+    cpu.csrs[0x310] = (csr_entry_t){acess_mstatush, mstatush.raw, false};
+
+    // mtvec
+    uint32_t mtvec_val = TRAP_VEC_ADDR & (~0x3); // Direct trap mode
+    cpu.csrs[CSR_MTVEC_ADDR] = (csr_entry_t){NULL, mtvec_val, false};
+
+    // medeleg
+    cpu.csrs[CSR_MEDELEG_ADDR] = (csr_entry_t){NULL, 0x0, false};
+    cpu.csrs[CSR_MEDELEGH_ADDR] = (csr_entry_t){NULL, 0x0, false};
+    
+    // mcycle - should increment every core cycle
+    cpu.csrs[CSR_MCYCLE_ADDR] = (csr_entry_t){NULL, 0x0, true};
+    cpu.csrs[CSR_MCYCLEH_ADDR] = (csr_entry_t){NULL, 0x0, true};
+
+    // minstret - should increment every instruction that is finished
+    cpu.csrs[CSR_MINSTRET_ADDR] = (csr_entry_t){NULL, 0x0, true};
+    cpu.csrs[CSR_MINSTRETH_ADDR] = (csr_entry_t){NULL, 0x0, true};
+
+    // mhpmcounter3 - mhpmcounter31 (+ h versions) - RO 0 by defualt
+    // mhpevent3 - mhpevent31 (+ h versions) - RO 0 by defualt
+    // mcounteren - RO 0 by default
+    // mcountinhibit - RO 0 by default
+
+    // mscratch - R/W
+    cpu.csrs[CSR_MSCRATCH_ADDR] = (csr_entry_t){NULL, 0x0, true};
+    
+    // mepc - R/W - should be writen to on a trap
+    cpu.csrs[CSR_MEPC_ADDR] = (csr_entry_t){NULL, 0x0, true};
+}
 
 
 //  ****      Helper Functions      **** //
@@ -612,9 +840,80 @@ void mem_init(uint32_t sp, uint32_t max_stack_size, char *ihex_file){
 // ***************************************** //
 // ***************************************** //
 
+/*
+
+misa = {
+    MXLEN = 1, always
+    Extensions = {bit8=1}
+} = 0x4000_0100
+
+Ignore writes, only support this operating mode. RV32I.
+
+mvendorid = read only = 0x
+
+*/
+
+/*
+read_enable
+write_enable
+write_type[0,1,2]
+
+
+CSR access will change depending on addr:
+
+csr_entry_t cpu.csrs[] = {0};
+
+cpu.csrs[misa_addr] = {NULL, 0x4000_0100, false, false};
+
+*/
+
+uint32_t csr_access(uint32_t addr, uint32_t wdata, bool read_enable, bool write_enable, uint8_t write_type){
+
+
+    uint32_t rdata;
+
+    passert(ISINSIDE(addr, 0, 4095), "Out of bounds CSR access");
+
+    csr_entry_t *csr = cpu.csrs + addr;
+    if(csr->acess_func != NULL){
+        return csr->acess_func(wdata, read_enable, write_enable, write_type);
+    }
+
+    if(!csr->writeable){
+        write_enable = false;
+    }
+
+
+
+    if(read_enable){
+        rdata = csr->value;
+        // + Side affects for a read to a particular CSR
+    }
+    if(write_enable){
+        switch (write_type){
+            case 0: // Write whole bus
+                csr->value = wdata;
+                // + side affects for a whole bus write
+                break;
+            case 1: // Set bits
+                csr->value = wdata | csr->value;
+                // + side affects for bits which are set
+                break;
+            case 2: // Clear bits
+                csr->value = (~wdata) & csr->value;
+                // + side affects for bits which are cleared
+                break;
+            default:
+                passert(false, "Bad CSR access type");
+        }
+    }
+    return rdata;
+
+}
+
 
 void process_cmd(uint32_t instr_r){
-    uint32_t rd, immd, rs1_val, rs2_val;
+    uint32_t rd, immd, rs1_val, rs2_val, rd_addr, rs1_addr;
     uint32_t immd_b, immd_i, immd_s, immd_u, immd_j;
     uint32_t opcode = get_bits(instr_r, 6, 0); 
 
@@ -622,7 +921,9 @@ void process_cmd(uint32_t instr_r){
 
     // Common feilds
     rd = get_bits(instr_r, 11, 7); 
+    rd_addr = get_bits(instr_r, 11, 7); 
     rd = (rd == 0) ? (32) : (rd); // writes to r0 have no affect
+    rs1_addr = get_bits(instr_r, 19, 15);
     rs1_val = cpu.reg[get_bits(instr_r, 19, 15)];
     rs2_val = cpu.reg[get_bits(instr_r, 24, 20)];
 
@@ -831,8 +1132,20 @@ void process_cmd(uint32_t instr_r){
             passert( get_bits(instr_r, 14, 12) == 0b000, "Bad Fence Instruction");
             cpu.pc = cpu.pc + 4;
             break;
-        case 0b1110011: // Sys Call instructions
-            passert( (get_bits(instr_r, 31, 7) == 0b10000000000000) || get_bits(instr_r, 31, 7) == 0b0, "Bad Sys call instruction" );
+        case 0b1110011: // Sys Call instructions - SYSTEM opcode
+            uint32_t csr_addr = get_bits(instr_r, 31, 20);
+            uint32_t csr_func = get_bits(instr_r, 13, 12);
+            uint32_t csr_wsource = get_bits(instr_r, 14, 14);
+            passert( ISINSIDE(csr_func, 1, 3), "Bad CSR instruction. ECALL/EBREAK/EPAUSE not implemented");
+
+            bool csr_read_enable    = (csr_func == 0) ? (rd_addr == 0) : (1);      // No R side affects if rd is x0 and its a full write
+            bool csr_write_enable   = (csr_func == 0) ? (1) : (rs1_addr == 0);    // No W side affects if rs is x0 or immd is 0, and its set/clear operation
+            bool csr_write_type     = csr_func;
+            uint32_t csr_wval       = csr_wsource ? (rs1_addr) : (rs1_val);
+
+            cpu.reg[rd] = csr_access(csr_addr, csr_wval, csr_read_enable, csr_write_enable, csr_write_type); // Dont care about saving output when read_enable=0, because dest will be x0
+
+
             passert(false, "Sys call instruction not implemented");
             break;
         default :
@@ -897,6 +1210,9 @@ void simulate(char *memory_image, uint32_t pc_start){
     cpu.pc = pc_start;
     cpu.reg[2] = STACK_START_ADDR;      // Set stack address
     cpu.reg[1] = PC_QUIT_ADDR;          // Set return address
+
+
+    init_csrs();
 
 
     uint32_t cmds_done = 0;
